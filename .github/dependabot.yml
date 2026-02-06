@@ -1,4 +1,6 @@
 version: 2
+open-pull-requests-limit: 10
+
 updates:
   # npm dependencies (package.json / bun.lock)
   - package-ecosystem: "npm"
@@ -6,6 +8,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      timezone: "Europe/Oslo"
     reviewers:
       - "frodeste"
     labels:
@@ -42,6 +45,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      timezone: "Europe/Oslo"
     reviewers:
       - "frodeste"
     labels:
@@ -50,6 +54,10 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   # Docker (devcontainer)
   - package-ecosystem: "docker"
@@ -57,6 +65,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      timezone: "Europe/Oslo"
     reviewers:
       - "frodeste"
     labels:
@@ -72,6 +81,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      timezone: "Europe/Oslo"
     reviewers:
       - "frodeste"
     labels:
