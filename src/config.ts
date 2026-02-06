@@ -15,12 +15,12 @@ const envSchema = z.object({
 	TRIPLETEX_CONSUMER_TOKEN: z.string().min(1),
 	TRIPLETEX_EMPLOYEE_TOKEN: z.string().min(1),
 
-	// Auth0
+	// Auth0 (v4 SDK env var names)
 	AUTH0_SECRET: z.string().min(1),
-	AUTH0_BASE_URL: z.string().url().default("https://integration.uniteperformance.no"),
-	AUTH0_ISSUER_BASE_URL: z.string().url(),
+	AUTH0_DOMAIN: z.string().min(1),
 	AUTH0_CLIENT_ID: z.string().min(1),
 	AUTH0_CLIENT_SECRET: z.string().min(1),
+	APP_BASE_URL: z.string().url().default("https://integration.uniteperformance.no"),
 
 	// Vercel Cron
 	CRON_SECRET: z.string().min(1).optional(),
