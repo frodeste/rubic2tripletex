@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { RubicClient } from "@/clients/rubic";
 import type { TripletexClient } from "@/clients/tripletex";
 import type { db } from "@/db/client";
-import { invoiceMapping, syncState } from "@/db/schema";
+import { type TripletexEnv, invoiceMapping, syncState } from "@/db/schema";
 import { logger } from "@/logger";
 import type { RubicInvoiceTransaction } from "@/types/rubic";
 import type { TripletexPayment } from "@/types/tripletex";
@@ -12,7 +12,7 @@ import type { TripletexPayment } from "@/types/tripletex";
  * - Gets last sync timestamp from sync_state table for type 'payments'
  * - Fetches invoice transactions from Rubic since last sync
  * - For each transaction:
- *   - Looks up corresponding Tripletex invoice ID from invoice_mapping table
+ *   - Looks up corresponding Tripletex invoice ID from invoice_mapping table (filtered by env)
  *   - Skips if no mapping found (invoice hasn't been synced yet)
  *   - Skips if paymentSynced is already true
  *   - Registers payment in Tripletex
@@ -23,14 +23,21 @@ export async function syncPayments(
 	rubicClient: RubicClient,
 	tripletexClient: TripletexClient,
 	dbInstance: typeof db,
+	tripletexEnv: TripletexEnv = "production",
 ): Promise<{ processed: number; failed: number }> {
-	logger.info("Starting payment sync", "sync-payments");
+	logger.info("Starting payment sync", "sync-payments", { tripletexEnv });
 
 	// Get last sync timestamp
 	const [lastSyncState] = await dbInstance
 		.select()
 		.from(syncState)
-		.where(and(eq(syncState.syncType, "payments"), eq(syncState.status, "success")))
+		.where(
+			and(
+				eq(syncState.syncType, "payments"),
+				eq(syncState.status, "success"),
+				eq(syncState.tripletexEnv, tripletexEnv),
+			),
+		)
 		.orderBy(desc(syncState.completedAt))
 		.limit(1);
 
@@ -40,6 +47,7 @@ export async function syncPayments(
 	logger.info("Fetching invoice transactions from Rubic", "sync-payments", {
 		startPeriod: startPeriod?.toISOString(),
 		endPeriod: endPeriod.toISOString(),
+		tripletexEnv,
 	});
 
 	// Create sync state entry
@@ -47,6 +55,7 @@ export async function syncPayments(
 		.insert(syncState)
 		.values({
 			syncType: "payments",
+			tripletexEnv,
 			status: "running",
 			recordsProcessed: 0,
 			recordsFailed: 0,
@@ -65,12 +74,18 @@ export async function syncPayments(
 		const transactions = await rubicClient.getInvoiceTransactions(startPeriod, endPeriod);
 		logger.info(`Fetched ${transactions.length} invoice transactions from Rubic`, "sync-payments", {
 			count: transactions.length,
+			tripletexEnv,
 		});
 
 		// Process each transaction
 		for (const transaction of transactions) {
 			try {
-				const wasProcessed = await processTransaction(transaction, tripletexClient, dbInstance);
+				const wasProcessed = await processTransaction(
+					transaction,
+					tripletexClient,
+					dbInstance,
+					tripletexEnv,
+				);
 				if (wasProcessed) {
 					processed++;
 				}
@@ -82,6 +97,7 @@ export async function syncPayments(
 					{
 						invoiceTransactionID: transaction.invoiceTransactionID,
 						invoiceID: transaction.invoiceID,
+						tripletexEnv,
 						error: error instanceof Error ? error.message : String(error),
 					},
 				);
@@ -103,6 +119,7 @@ export async function syncPayments(
 		logger.info("Payment sync completed", "sync-payments", {
 			processed,
 			failed,
+			tripletexEnv,
 		});
 
 		return { processed, failed };
@@ -121,6 +138,7 @@ export async function syncPayments(
 
 		logger.error("Payment sync failed", "sync-payments", {
 			error: error instanceof Error ? error.message : String(error),
+			tripletexEnv,
 		});
 
 		throw error;
@@ -135,22 +153,28 @@ async function processTransaction(
 	transaction: RubicInvoiceTransaction,
 	tripletexClient: TripletexClient,
 	dbInstance: typeof db,
+	tripletexEnv: TripletexEnv,
 ): Promise<boolean> {
-	// Look up invoice mapping
+	// Look up invoice mapping for this environment
 	const [mapping] = await dbInstance
 		.select()
 		.from(invoiceMapping)
-		.where(eq(invoiceMapping.rubicInvoiceId, transaction.invoiceID))
+		.where(
+			and(
+				eq(invoiceMapping.rubicInvoiceId, transaction.invoiceID),
+				eq(invoiceMapping.tripletexEnv, tripletexEnv),
+			),
+		)
 		.limit(1);
 
 	if (!mapping) {
-		// No mapping found, skip (invoice hasn't been synced yet)
 		logger.debug(
 			`Skipping transaction ${transaction.invoiceTransactionID} - no invoice mapping found`,
 			"sync-payments",
 			{
 				invoiceTransactionID: transaction.invoiceTransactionID,
 				rubicInvoiceId: transaction.invoiceID,
+				tripletexEnv,
 			},
 		);
 		return false;
@@ -164,6 +188,7 @@ async function processTransaction(
 			{
 				invoiceTransactionID: transaction.invoiceTransactionID,
 				rubicInvoiceId: transaction.invoiceID,
+				tripletexEnv,
 			},
 		);
 		return false;
@@ -179,6 +204,7 @@ async function processTransaction(
 			tripletexInvoiceId: mapping.tripletexInvoiceId,
 			amount: transaction.paidAmount,
 			paymentDate: transaction.paymentDate,
+			tripletexEnv,
 		},
 	);
 
@@ -195,7 +221,12 @@ async function processTransaction(
 		.set({
 			paymentSynced: true,
 		})
-		.where(eq(invoiceMapping.rubicInvoiceId, transaction.invoiceID));
+		.where(
+			and(
+				eq(invoiceMapping.rubicInvoiceId, transaction.invoiceID),
+				eq(invoiceMapping.tripletexEnv, tripletexEnv),
+			),
+		);
 
 	logger.info(
 		`Successfully registered payment for invoice ${transaction.invoiceID}`,
@@ -204,6 +235,7 @@ async function processTransaction(
 			invoiceTransactionID: transaction.invoiceTransactionID,
 			rubicInvoiceId: transaction.invoiceID,
 			tripletexInvoiceId: mapping.tripletexInvoiceId,
+			tripletexEnv,
 		},
 	);
 

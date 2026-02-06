@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { RubicClient } from "@/clients/rubic";
 import type { TripletexClient } from "@/clients/tripletex";
 import type { db } from "@/db/client";
-import { customerMapping, syncState } from "@/db/schema";
+import { type TripletexEnv, customerMapping, syncState } from "@/db/schema";
 import { logger } from "@/logger";
 import { computeCustomerHash, mapRubicCustomerToTripletex } from "@/mappers/customer.mapper";
 
@@ -22,6 +22,7 @@ export async function syncCustomers(
 	rubicClient: RubicClient,
 	tripletexClient: TripletexClient,
 	dbInstance: typeof db,
+	tripletexEnv: TripletexEnv = "production",
 ): Promise<{ processed: number; failed: number }> {
 	let processed = 0;
 	let failed = 0;
@@ -33,6 +34,7 @@ export async function syncCustomers(
 			.insert(syncState)
 			.values({
 				syncType: "customers",
+				tripletexEnv,
 				status: "running",
 				recordsProcessed: 0,
 				recordsFailed: 0,
@@ -43,11 +45,14 @@ export async function syncCustomers(
 
 		logger.info("Starting customer sync", "syncCustomers", {
 			syncStateId,
+			tripletexEnv,
 		});
 
 		// Fetch all customers from Rubic
 		const rubicCustomers = await rubicClient.getCustomers();
-		logger.info(`Fetched ${rubicCustomers.length} customers from Rubic`, "syncCustomers");
+		logger.info(`Fetched ${rubicCustomers.length} customers from Rubic`, "syncCustomers", {
+			tripletexEnv,
+		});
 
 		// Process each customer
 		for (const rubicCustomer of rubicCustomers) {
@@ -55,6 +60,7 @@ export async function syncCustomers(
 			if (!rubicCustomer.customerNo) {
 				logger.debug("Skipping customer without customerNo", "syncCustomers", {
 					customerName: rubicCustomer.customerName,
+					tripletexEnv,
 				});
 				continue;
 			}
@@ -63,11 +69,16 @@ export async function syncCustomers(
 				const customerNo = rubicCustomer.customerNo;
 				const newHash = computeCustomerHash(rubicCustomer);
 
-				// Check existing mapping
+				// Check existing mapping for this environment
 				const [existingMapping] = await dbInstance
 					.select()
 					.from(customerMapping)
-					.where(eq(customerMapping.rubicCustomerNo, customerNo))
+					.where(
+						and(
+							eq(customerMapping.rubicCustomerNo, customerNo),
+							eq(customerMapping.tripletexEnv, tripletexEnv),
+						),
+					)
 					.limit(1);
 
 				let tripletexCustomerId: number;
@@ -78,6 +89,7 @@ export async function syncCustomers(
 						logger.debug("Customer unchanged, skipping", "syncCustomers", {
 							customerNo,
 							tripletexCustomerId: existingMapping.tripletexCustomerId,
+							tripletexEnv,
 						});
 						processed++;
 						continue;
@@ -88,7 +100,6 @@ export async function syncCustomers(
 					const tripletexCustomer = mapRubicCustomerToTripletex(rubicCustomer);
 
 					// Fetch current customer to get version for optimistic locking
-					// Search by customer number if available
 					let existingCustomer: Awaited<ReturnType<typeof tripletexClient.getCustomerByNumber>> =
 						null;
 					const customerNumber = Number.parseInt(customerNo, 10);
@@ -96,12 +107,10 @@ export async function syncCustomers(
 						existingCustomer = await tripletexClient.getCustomerByNumber(customerNumber);
 					}
 
-					// If found by number and matches our ID, use its version; otherwise use the ID from mapping
 					if (existingCustomer?.id === tripletexCustomerId && existingCustomer.version) {
 						tripletexCustomer.id = existingCustomer.id;
 						tripletexCustomer.version = existingCustomer.version;
 					} else {
-						// Fallback: set ID and let Tripletex handle version
 						tripletexCustomer.id = tripletexCustomerId;
 					}
 
@@ -109,6 +118,7 @@ export async function syncCustomers(
 					logger.info("Updated customer in Tripletex", "syncCustomers", {
 						customerNo,
 						tripletexCustomerId,
+						tripletexEnv,
 					});
 				} else {
 					// No mapping exists, search or create
@@ -122,14 +132,13 @@ export async function syncCustomers(
 					}
 
 					if (existingTripletexCustomer?.id) {
-						// Found existing customer in Tripletex
 						tripletexCustomerId = existingTripletexCustomer.id;
 						logger.info("Found existing customer in Tripletex", "syncCustomers", {
 							customerNo,
 							tripletexCustomerId,
+							tripletexEnv,
 						});
 					} else {
-						// Create new customer
 						const tripletexCustomer = mapRubicCustomerToTripletex(rubicCustomer);
 						const createResponse = await tripletexClient.createCustomer(tripletexCustomer);
 						if (!createResponse.value.id) {
@@ -139,6 +148,7 @@ export async function syncCustomers(
 						logger.info("Created new customer in Tripletex", "syncCustomers", {
 							customerNo,
 							tripletexCustomerId,
+							tripletexEnv,
 						});
 					}
 				}
@@ -148,11 +158,12 @@ export async function syncCustomers(
 					.insert(customerMapping)
 					.values({
 						rubicCustomerNo: customerNo,
+						tripletexEnv,
 						tripletexCustomerId,
 						hash: newHash,
 					})
 					.onConflictDoUpdate({
-						target: customerMapping.rubicCustomerNo,
+						target: [customerMapping.rubicCustomerNo, customerMapping.tripletexEnv],
 						set: {
 							tripletexCustomerId,
 							hash: newHash,
@@ -165,6 +176,7 @@ export async function syncCustomers(
 				failed++;
 				logger.error("Failed to sync customer", "syncCustomers", {
 					customerNo: rubicCustomer.customerNo,
+					tripletexEnv,
 					error: error instanceof Error ? error.message : String(error),
 				});
 			}
@@ -187,6 +199,7 @@ export async function syncCustomers(
 		logger.info("Customer sync completed", "syncCustomers", {
 			processed,
 			failed,
+			tripletexEnv,
 		});
 
 		return { processed, failed };
@@ -209,6 +222,7 @@ export async function syncCustomers(
 			error: error instanceof Error ? error.message : String(error),
 			processed,
 			failed,
+			tripletexEnv,
 		});
 
 		throw error;

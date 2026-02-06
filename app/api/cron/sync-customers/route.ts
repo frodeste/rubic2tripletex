@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { RubicClient } from "@/clients/rubic";
 import { TripletexClient } from "@/clients/tripletex";
-import { getConfig } from "@/config";
+import { getConfig, getEnabledTripletexEnvs } from "@/config";
 import { db } from "@/db/client";
 import { logger } from "@/logger";
 import { syncCustomers } from "@/sync/customers";
@@ -21,26 +21,42 @@ export async function GET(request: Request) {
 			}
 		}
 
-		// Instantiate clients from env vars
 		const rubicClient = new RubicClient({
 			baseUrl: config.RUBIC_API_BASE_URL,
 			apiKey: config.RUBIC_API_KEY,
 			organizationId: config.RUBIC_ORGANIZATION_ID,
 		});
 
-		const tripletexClient = new TripletexClient({
-			baseUrl: config.TRIPLETEX_API_BASE_URL,
-			consumerToken: config.TRIPLETEX_CONSUMER_TOKEN,
-			employeeToken: config.TRIPLETEX_EMPLOYEE_TOKEN,
-		});
+		// Run sync for all enabled Tripletex environments
+		const enabledEnvs = getEnabledTripletexEnvs();
+		const results: Record<string, { processed: number; failed: number }> = {};
 
-		// Run sync
-		const result = await syncCustomers(rubicClient, tripletexClient, db);
+		for (const envConfig of enabledEnvs) {
+			const tripletexClient = new TripletexClient({
+				baseUrl: envConfig.baseUrl,
+				consumerToken: envConfig.consumerToken,
+				employeeToken: envConfig.employeeToken,
+			});
+
+			try {
+				results[envConfig.env] = await syncCustomers(
+					rubicClient,
+					tripletexClient,
+					db,
+					envConfig.env,
+				);
+			} catch (error) {
+				logger.error(`Customer sync failed for ${envConfig.env}`, "sync-customers-route", {
+					env: envConfig.env,
+					error: error instanceof Error ? error.message : String(error),
+				});
+				results[envConfig.env] = { processed: 0, failed: -1 };
+			}
+		}
 
 		return NextResponse.json({
 			success: true,
-			processed: result.processed,
-			failed: result.failed,
+			results,
 		});
 	} catch (error) {
 		logger.error("Customer sync route failed", "sync-customers-route", {
