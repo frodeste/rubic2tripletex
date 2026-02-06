@@ -1,13 +1,10 @@
 import { RubicClient } from "@/clients/rubic";
 import { TripletexClient } from "@/clients/tripletex";
-import { getConfig, getPartialConfig } from "@/config";
+import { getConfig, getEnabledTripletexEnvs, getPartialConfig } from "@/config";
 import { db } from "@/db/client";
+import { logger } from "@/logger";
 import { syncProducts } from "@/sync/products";
 
-/**
- * API route handler for product sync cron job.
- * Verifies CRON_SECRET if configured, then syncs products from Rubic to Tripletex.
- */
 export async function GET(request: Request) {
 	const partialConfig = getPartialConfig();
 
@@ -25,29 +22,44 @@ export async function GET(request: Request) {
 	}
 
 	try {
-		// Get full config for client instantiation
 		const config = getConfig();
 
-		// Instantiate clients
 		const rubicClient = new RubicClient({
 			baseUrl: config.RUBIC_API_BASE_URL,
 			apiKey: config.RUBIC_API_KEY,
 			organizationId: config.RUBIC_ORGANIZATION_ID,
 		});
 
-		const tripletexClient = new TripletexClient({
-			baseUrl: config.TRIPLETEX_API_BASE_URL,
-			consumerToken: config.TRIPLETEX_CONSUMER_TOKEN,
-			employeeToken: config.TRIPLETEX_EMPLOYEE_TOKEN,
-		});
+		// Run sync for all enabled Tripletex environments
+		const enabledEnvs = getEnabledTripletexEnvs();
+		const results: Record<string, { processed: number; failed: number }> = {};
 
-		// Run sync
-		const result = await syncProducts(rubicClient, tripletexClient, db);
+		for (const envConfig of enabledEnvs) {
+			const tripletexClient = new TripletexClient({
+				baseUrl: envConfig.baseUrl,
+				consumerToken: envConfig.consumerToken,
+				employeeToken: envConfig.employeeToken,
+			});
+
+			try {
+				results[envConfig.env] = await syncProducts(
+					rubicClient,
+					tripletexClient,
+					db,
+					envConfig.env,
+				);
+			} catch (error) {
+				logger.error(`Product sync failed for ${envConfig.env}`, "sync-products-route", {
+					env: envConfig.env,
+					error: error instanceof Error ? error.message : String(error),
+				});
+				results[envConfig.env] = { processed: 0, failed: -1 };
+			}
+		}
 
 		return Response.json({
 			success: true,
-			processed: result.processed,
-			failed: result.failed,
+			results,
 		});
 	} catch (error) {
 		return new Response(

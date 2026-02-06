@@ -1,6 +1,7 @@
 import { desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { auth0 } from "@/auth0";
+import { getEnabledTripletexEnvs } from "@/config";
 import { db } from "@/db/client";
 import { syncState } from "@/db/schema";
 import TriggerButton from "./components/TriggerButton";
@@ -12,7 +13,9 @@ export default async function Home() {
 		redirect("/api/auth/login");
 	}
 
-	const runs = await db.select().from(syncState).orderBy(desc(syncState.startedAt)).limit(20);
+	const runs = await db.select().from(syncState).orderBy(desc(syncState.startedAt)).limit(40);
+
+	const enabledEnvs = getEnabledTripletexEnvs().map((e) => e.env);
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
@@ -22,6 +25,17 @@ export default async function Home() {
 				return "#ef4444"; // red
 			case "running":
 				return "#f59e0b"; // yellow
+			default:
+				return "#6b7280"; // gray
+		}
+	};
+
+	const getEnvColor = (env: string) => {
+		switch (env) {
+			case "production":
+				return "#6366f1"; // indigo
+			case "sandbox":
+				return "#f97316"; // orange
 			default:
 				return "#6b7280"; // gray
 		}
@@ -57,7 +71,33 @@ export default async function Home() {
 					borderBottom: "2px solid #e5e7eb",
 				}}
 			>
-				<h1 style={{ margin: 0, fontSize: "2rem", fontWeight: "bold" }}>Rubic2Tripletex</h1>
+				<div>
+					<h1 style={{ margin: 0, fontSize: "2rem", fontWeight: "bold" }}>Rubic2Tripletex</h1>
+					<div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem" }}>
+						{enabledEnvs.map((env) => (
+							<span
+								key={env}
+								style={{
+									display: "inline-block",
+									padding: "0.125rem 0.5rem",
+									borderRadius: "9999px",
+									backgroundColor: getEnvColor(env),
+									color: "white",
+									fontSize: "0.75rem",
+									fontWeight: "600",
+									textTransform: "uppercase",
+								}}
+							>
+								{env}
+							</span>
+						))}
+						{enabledEnvs.length === 0 && (
+							<span style={{ color: "#ef4444", fontSize: "0.875rem" }}>
+								No Tripletex environments enabled
+							</span>
+						)}
+					</div>
+				</div>
 				<a
 					href="/api/auth/logout"
 					style={{
@@ -73,22 +113,39 @@ export default async function Home() {
 				</a>
 			</header>
 
-			<section style={{ marginBottom: "2rem" }}>
-				<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>Run Sync</h2>
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-						gap: "1rem",
-						marginBottom: "2rem",
-					}}
-				>
-					<TriggerButton syncType="customers" />
-					<TriggerButton syncType="products" />
-					<TriggerButton syncType="invoices" />
-					<TriggerButton syncType="payments" />
-				</div>
-			</section>
+			{enabledEnvs.map((env) => (
+				<section key={env} style={{ marginBottom: "2rem" }}>
+					<h2 style={{ marginBottom: "1rem", fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+						<span
+							style={{
+								display: "inline-block",
+								padding: "0.125rem 0.5rem",
+								borderRadius: "9999px",
+								backgroundColor: getEnvColor(env),
+								color: "white",
+								fontSize: "0.75rem",
+								fontWeight: "600",
+								textTransform: "uppercase",
+							}}
+						>
+							{env}
+						</span>
+						Run Sync
+					</h2>
+					<div
+						style={{
+							display: "grid",
+							gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+							gap: "1rem",
+						}}
+					>
+						<TriggerButton syncType="customers" tripletexEnv={env} />
+						<TriggerButton syncType="products" tripletexEnv={env} />
+						<TriggerButton syncType="invoices" tripletexEnv={env} />
+						<TriggerButton syncType="payments" tripletexEnv={env} />
+					</div>
+				</section>
+			))}
 
 			<section>
 				<h2 style={{ marginBottom: "1rem", fontSize: "1.5rem" }}>Sync Status</h2>
@@ -108,6 +165,18 @@ export default async function Home() {
 					>
 						<thead>
 							<tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+								<th
+									style={{
+										padding: "0.75rem",
+										textAlign: "left",
+										fontWeight: "600",
+										fontSize: "0.875rem",
+										textTransform: "uppercase",
+										color: "#6b7280",
+									}}
+								>
+									Environment
+								</th>
 								<th
 									style={{
 										padding: "0.75rem",
@@ -198,7 +267,7 @@ export default async function Home() {
 							{runs.length === 0 ? (
 								<tr>
 									<td
-										colSpan={7}
+										colSpan={8}
 										style={{
 											padding: "2rem",
 											textAlign: "center",
@@ -216,6 +285,22 @@ export default async function Home() {
 											borderBottom: "1px solid #e5e7eb",
 										}}
 									>
+										<td style={{ padding: "0.75rem" }}>
+											<span
+												style={{
+													display: "inline-block",
+													padding: "0.125rem 0.5rem",
+													borderRadius: "9999px",
+													backgroundColor: getEnvColor(run.tripletexEnv),
+													color: "white",
+													fontSize: "0.75rem",
+													fontWeight: "600",
+													textTransform: "uppercase",
+												}}
+											>
+												{run.tripletexEnv}
+											</span>
+										</td>
 										<td
 											style={{
 												padding: "0.75rem",
