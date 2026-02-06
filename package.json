@@ -14,7 +14,9 @@
 		"format": "biome format --write .",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"test": "bun test",
+		"test:coverage": "bun test --coverage"
 	},
 	"dependencies": {
 		"@auth0/nextjs-auth0": "^4.14.1",
