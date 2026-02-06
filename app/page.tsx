@@ -1,12 +1,12 @@
-import { getSession } from "@auth0/nextjs-auth0";
 import { desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { auth0 } from "@/auth0";
 import { db } from "@/db/client";
 import { syncState } from "@/db/schema";
 import TriggerButton from "./components/TriggerButton";
 
 export default async function Home() {
-	const session = await getSession();
+	const session = await auth0.getSession();
 
 	if (!session) {
 		redirect("/api/auth/login");
