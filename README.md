@@ -14,14 +14,14 @@ One-way data synchronization from Rubic (membership management system) to Triple
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
-- **Runtime**: TypeScript, Node.js 20
+- **Runtime**: TypeScript, Node.js 24
 - **Package Manager**: Bun
 - **Hosting**: Vercel (custom domain: `https://integration.uniteperformance.no`)
 - **Database**: Neon Postgres (via Vercel integration)
 - **ORM**: Drizzle ORM
 - **Linting/Formatting**: Biome.js
 - **Auth**: Auth0 (dashboard protection)
-- **Dev Environment**: DevContainer (Node 20 + Bun + PostgreSQL 16)
+- **Dev Environment**: DevContainer (Node 24 + Bun + PostgreSQL 16)
 
 ## Getting Started
 
@@ -62,7 +62,7 @@ bun run dev
 
 ### Using DevContainer
 
-Open the project in VS Code with the Dev Containers extension. The container provides Node 20, Bun, and a local PostgreSQL instance pre-configured.
+Open the project in VS Code with the Dev Containers extension. The container provides Node 24, Bun, and a local PostgreSQL instance pre-configured.
 
 ## Available Scripts
 
