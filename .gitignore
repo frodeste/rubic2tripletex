@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Next.js
 .next/
@@ -14,6 +15,7 @@ out/
 
 # Debug
 npm-debug.log*
+pnpm-debug.log*
 
 # OS
 .DS_Store
@@ -23,6 +25,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+*~
 
 # TypeScript
 *.tsbuildinfo

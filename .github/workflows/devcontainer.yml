@@ -1,0 +1,105 @@
+name: Build and Push Devcontainer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".devcontainer/**"
+      - ".github/workflows/devcontainer.yml"
+    tags:
+      - "devcontainer-v*"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".devcontainer/**"
+  workflow_dispatch:
+    inputs:
+      push:
+        description: "Push image to GHCR"
+        required: false
+        default: true
+        type: boolean
+      version:
+        description: "Version tag (e.g., 1.0.0)"
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/rubic2tripletex-devcontainer
+
+jobs:
+  build:
+    name: Build Devcontainer Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Latest tag for main branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Git short SHA
+            type=sha,prefix=,format=short
+            # Branch name
+            type=ref,event=branch
+            # PR number
+            type=ref,event=pr
+            # Version from git tag (devcontainer-v1.0.0 -> 1.0.0)
+            type=match,pattern=devcontainer-v(.*),group=1
+            # Major.minor from git tag (devcontainer-v1.0.0 -> 1.0)
+            type=match,pattern=devcontainer-v(\d+\.\d+),group=1
+            # Manual version input
+            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event.inputs.version != '' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push != 'false') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          build-args: |
+            BUN_VERSION=1.2.4
+
+      - name: Output image details
+        run: |
+          echo "## Devcontainer Image Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tags" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Usage" >> $GITHUB_STEP_SUMMARY
+          echo 'To use this pre-built image, update `.devcontainer/devcontainer.json`:' >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo '"image": "ghcr.io/${{ env.IMAGE_NAME }}:latest"' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
