@@ -1,31 +1,47 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { getEnabledTripletexEnvs } from "@/config";
 import { db } from "@/db/client";
+import type { TripletexEnv } from "@/db/schema";
 import { syncState } from "@/db/schema";
 
 export async function GET() {
 	try {
-		// Check DB connectivity and get latest sync status for each type
 		const syncTypes = ["customers", "products", "invoices", "payments"] as const;
-		const statuses: Record<string, { status: string; lastSync: string | null }> = {};
+		const enabledEnvs = getEnabledTripletexEnvs();
+		const enabledEnvNames = enabledEnvs.map((e) => e.env);
 
-		for (const syncType of syncTypes) {
-			const [latest] = await db
-				.select()
-				.from(syncState)
-				.where(eq(syncState.syncType, syncType))
-				.orderBy(desc(syncState.completedAt))
-				.limit(1);
+		const statuses: Record<
+			string,
+			Record<string, { status: string; lastSync: string | null }>
+		> = {};
 
-			statuses[syncType] = {
-				status: latest?.status ?? "never_run",
-				lastSync: latest?.completedAt?.toISOString() ?? null,
-			};
+		for (const env of enabledEnvNames) {
+			statuses[env] = {};
+			for (const syncType of syncTypes) {
+				const [latest] = await db
+					.select()
+					.from(syncState)
+					.where(
+						and(
+							eq(syncState.syncType, syncType),
+							eq(syncState.tripletexEnv, env as TripletexEnv),
+						),
+					)
+					.orderBy(desc(syncState.completedAt))
+					.limit(1);
+
+				statuses[env][syncType] = {
+					status: latest?.status ?? "never_run",
+					lastSync: latest?.completedAt?.toISOString() ?? null,
+				};
+			}
 		}
 
 		return NextResponse.json({
 			status: "healthy",
 			timestamp: new Date().toISOString(),
+			enabledEnvironments: enabledEnvNames,
 			syncs: statuses,
 		});
 	} catch (error) {

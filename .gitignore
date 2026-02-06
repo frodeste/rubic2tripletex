@@ -24,5 +24,8 @@ Thumbs.db
 *.swp
 *.swo
 
+# TypeScript
+*.tsbuildinfo
+
 # Sentry
 .sentryclirc

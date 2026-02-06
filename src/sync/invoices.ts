@@ -1,8 +1,14 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { RubicClient } from "@/clients/rubic";
 import type { TripletexClient } from "@/clients/tripletex";
 import type { db } from "@/db/client";
-import { customerMapping, invoiceMapping, productMapping, syncState } from "@/db/schema";
+import {
+	type TripletexEnv,
+	customerMapping,
+	invoiceMapping,
+	productMapping,
+	syncState,
+} from "@/db/schema";
 import { logger } from "@/logger";
 import { mapRubicInvoiceToTripletexOrder } from "@/mappers/invoice.mapper";
 
@@ -10,9 +16,9 @@ import { mapRubicInvoiceToTripletexOrder } from "@/mappers/invoice.mapper";
  * Syncs invoices from Rubic to Tripletex.
  * - Gets last sync timestamp from sync_state table
  * - Fetches invoices from Rubic since last sync (or all if first run)
- * - Loads customer_mapping and product_mapping from DB
+ * - Loads customer_mapping and product_mapping from DB (filtered by env)
  * - For each invoice:
- *   - Checks if already synced (exists in invoice_mapping)
+ *   - Checks if already synced (exists in invoice_mapping for this env)
  *   - If not synced: looks up customer and products, creates Order then Invoice
  *   - Stores mapping in invoice_mapping table
  * - Updates sync_state table at start and end
@@ -23,14 +29,16 @@ export async function syncInvoices(
 	rubicClient: RubicClient,
 	tripletexClient: TripletexClient,
 	dbInstance: typeof db,
+	tripletexEnv: TripletexEnv = "production",
 ): Promise<{ processed: number; failed: number }> {
-	logger.info("Starting invoice sync", "sync-invoices");
+	logger.info("Starting invoice sync", "sync-invoices", { tripletexEnv });
 
 	// Create sync state entry
 	const [syncStateEntry] = await dbInstance
 		.insert(syncState)
 		.values({
 			syncType: "invoices",
+			tripletexEnv,
 			status: "running",
 			recordsProcessed: 0,
 			recordsFailed: 0,
@@ -45,46 +53,66 @@ export async function syncInvoices(
 	let failed = 0;
 
 	try {
-		// Get last sync timestamp (most recent successful sync)
+		// Get last sync timestamp (most recent successful sync for this env)
 		const [lastSyncState] = await dbInstance
 			.select()
 			.from(syncState)
-			.where(eq(syncState.syncType, "invoices"))
+			.where(
+				and(
+					eq(syncState.syncType, "invoices"),
+					eq(syncState.tripletexEnv, tripletexEnv),
+				),
+			)
 			.orderBy(desc(syncState.lastSyncAt))
 			.limit(1);
 
 		const startPeriod = lastSyncState?.lastSyncAt ? new Date(lastSyncState.lastSyncAt) : undefined;
-		const endPeriod = new Date(); // Current time
+		const endPeriod = new Date();
 
 		logger.info("Fetching invoices from Rubic", "sync-invoices", {
 			startPeriod: startPeriod?.toISOString(),
 			endPeriod: endPeriod.toISOString(),
+			tripletexEnv,
 		});
 
 		// Fetch invoices from Rubic
 		const rubicInvoices = await rubicClient.getInvoices(startPeriod, endPeriod);
 		logger.info(`Fetched ${rubicInvoices.length} invoices from Rubic`, "sync-invoices", {
 			count: rubicInvoices.length,
+			tripletexEnv,
 		});
 
-		// Load customer mappings
-		const customerMappings = await dbInstance.select().from(customerMapping);
+		// Load customer mappings for this environment
+		const customerMappings = await dbInstance
+			.select()
+			.from(customerMapping)
+			.where(eq(customerMapping.tripletexEnv, tripletexEnv));
 		const customerMap = new Map<string, number>();
 		for (const mapping of customerMappings) {
 			customerMap.set(mapping.rubicCustomerNo, mapping.tripletexCustomerId);
 		}
-		logger.info(`Loaded ${customerMap.size} customer mappings`, "sync-invoices");
+		logger.info(`Loaded ${customerMap.size} customer mappings`, "sync-invoices", {
+			tripletexEnv,
+		});
 
-		// Load product mappings
-		const productMappings = await dbInstance.select().from(productMapping);
+		// Load product mappings for this environment
+		const productMappings = await dbInstance
+			.select()
+			.from(productMapping)
+			.where(eq(productMapping.tripletexEnv, tripletexEnv));
 		const productMap = new Map<string, number>();
 		for (const mapping of productMappings) {
 			productMap.set(mapping.rubicProductCode, mapping.tripletexProductId);
 		}
-		logger.info(`Loaded ${productMap.size} product mappings`, "sync-invoices");
+		logger.info(`Loaded ${productMap.size} product mappings`, "sync-invoices", {
+			tripletexEnv,
+		});
 
-		// Check which invoices are already synced
-		const existingInvoiceMappings = await dbInstance.select().from(invoiceMapping);
+		// Check which invoices are already synced for this environment
+		const existingInvoiceMappings = await dbInstance
+			.select()
+			.from(invoiceMapping)
+			.where(eq(invoiceMapping.tripletexEnv, tripletexEnv));
 		const syncedInvoiceIds = new Set(existingInvoiceMappings.map((m) => m.rubicInvoiceId));
 
 		// Process each invoice
@@ -95,6 +123,7 @@ export async function syncInvoices(
 					logger.debug(`Skipping invoice ${invoice.invoiceID} (already synced)`, "sync-invoices", {
 						rubicInvoiceId: invoice.invoiceID,
 						rubicInvoiceNumber: invoice.invoiceNumber,
+						tripletexEnv,
 					});
 					processed++;
 					continue;
@@ -109,6 +138,7 @@ export async function syncInvoices(
 						{
 							rubicInvoiceId: invoice.invoiceID,
 							rubicInvoiceNumber: invoice.invoiceNumber,
+							tripletexEnv,
 						},
 					);
 					failed++;
@@ -124,6 +154,7 @@ export async function syncInvoices(
 							rubicInvoiceId: invoice.invoiceID,
 							rubicInvoiceNumber: invoice.invoiceNumber,
 							customerNo,
+							tripletexEnv,
 						},
 					);
 					failed++;
@@ -135,6 +166,7 @@ export async function syncInvoices(
 					logger.warn(`Skipping invoice ${invoice.invoiceID} (no invoice lines)`, "sync-invoices", {
 						rubicInvoiceId: invoice.invoiceID,
 						rubicInvoiceNumber: invoice.invoiceNumber,
+						tripletexEnv,
 					});
 					failed++;
 					continue;
@@ -152,6 +184,7 @@ export async function syncInvoices(
 						{
 							rubicInvoiceId: invoice.invoiceID,
 							rubicInvoiceNumber: invoice.invoiceNumber,
+							tripletexEnv,
 						},
 					);
 					failed++;
@@ -167,6 +200,7 @@ export async function syncInvoices(
 					rubicInvoiceNumber: invoice.invoiceNumber,
 					tripletexCustomerId,
 					orderLinesCount: order.orderLines?.length ?? 0,
+					tripletexEnv,
 				});
 
 				const orderResponse = await tripletexClient.createOrder(order);
@@ -181,6 +215,7 @@ export async function syncInvoices(
 					rubicInvoiceId: invoice.invoiceID,
 					rubicInvoiceNumber: invoice.invoiceNumber,
 					orderId,
+					tripletexEnv,
 				});
 
 				const invoiceResponse = await tripletexClient.createInvoiceFromOrder(
@@ -197,6 +232,7 @@ export async function syncInvoices(
 				// Store mapping
 				await dbInstance.insert(invoiceMapping).values({
 					rubicInvoiceId: invoice.invoiceID,
+					tripletexEnv,
 					rubicInvoiceNumber: invoice.invoiceNumber,
 					tripletexInvoiceId,
 					lastSyncedAt: new Date(),
@@ -208,6 +244,7 @@ export async function syncInvoices(
 					rubicInvoiceNumber: invoice.invoiceNumber,
 					tripletexInvoiceId,
 					orderId,
+					tripletexEnv,
 				});
 
 				processed++;
@@ -216,6 +253,7 @@ export async function syncInvoices(
 				logger.error(`Failed to sync invoice ${invoice.invoiceID}`, "sync-invoices", {
 					rubicInvoiceId: invoice.invoiceID,
 					rubicInvoiceNumber: invoice.invoiceNumber,
+					tripletexEnv,
 					error: error instanceof Error ? error.message : String(error),
 				});
 			}
@@ -236,6 +274,7 @@ export async function syncInvoices(
 		logger.info("Invoice sync completed", "sync-invoices", {
 			processed,
 			failed,
+			tripletexEnv,
 		});
 
 		return { processed, failed };
@@ -254,6 +293,7 @@ export async function syncInvoices(
 
 		logger.error("Invoice sync failed", "sync-invoices", {
 			error: error instanceof Error ? error.message : String(error),
+			tripletexEnv,
 		});
 
 		throw error;

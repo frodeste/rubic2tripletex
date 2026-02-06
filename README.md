@@ -14,14 +14,14 @@ One-way data synchronization from Rubic (membership management system) to Triple
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
-- **Runtime**: TypeScript, Node.js 20
+- **Runtime**: TypeScript, Node.js 24
 - **Package Manager**: Bun
 - **Hosting**: Vercel (custom domain: `https://integration.uniteperformance.no`)
 - **Database**: Neon Postgres (via Vercel integration)
 - **ORM**: Drizzle ORM
 - **Linting/Formatting**: Biome.js
 - **Auth**: Auth0 (dashboard protection)
-- **Dev Environment**: DevContainer (Node 20 + Bun + PostgreSQL 16)
+- **Dev Environment**: DevContainer (Node 24 + Bun + PostgreSQL 16)
 
 ## Getting Started
 
@@ -62,7 +62,7 @@ bun run dev
 
 ### Using DevContainer
 
-Open the project in VS Code with the Dev Containers extension. The container provides Node 20, Bun, and a local PostgreSQL instance pre-configured.
+Open the project in VS Code with the Dev Containers extension. The container provides Node 24, Bun, and a local PostgreSQL instance pre-configured.
 
 ## Available Scripts
 
@@ -133,6 +133,23 @@ src/
 - **customer_mapping**: Maps Rubic `customerNo` to Tripletex `customerId` with change-detection hash
 - **product_mapping**: Maps Rubic `productCode` to Tripletex `productId` with change-detection hash
 - **invoice_mapping**: Maps Rubic `invoiceId` to Tripletex `invoiceId` with payment sync status
+
+## Commit Conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) and [semantic-release](https://github.com/semantic-release/semantic-release) for automated versioning and changelog generation.
+
+| Prefix       | Purpose                          | Version Bump |
+| ------------ | -------------------------------- | ------------ |
+| `feat:`      | New feature                      | Minor        |
+| `fix:`       | Bug fix                          | Patch        |
+| `docs:`      | Documentation only               | None         |
+| `chore:`     | Maintenance / tooling            | None         |
+| `refactor:`  | Code change (no feature/fix)     | None         |
+| `test:`      | Adding or updating tests         | None         |
+| `ci:`        | CI/CD configuration              | None         |
+| `perf:`      | Performance improvement          | Patch        |
+
+Breaking changes: add `BREAKING CHANGE:` in the commit body or use `feat!:` / `fix!:` prefix for a major version bump.
 
 ## Environment Variables
 

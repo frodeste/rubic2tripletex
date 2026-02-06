@@ -4,9 +4,10 @@ import { useState } from "react";
 
 interface TriggerButtonProps {
 	syncType: string;
+	tripletexEnv: string;
 }
 
-export default function TriggerButton({ syncType }: TriggerButtonProps) {
+export default function TriggerButton({ syncType, tripletexEnv }: TriggerButtonProps) {
 	const [loading, setLoading] = useState(false);
 	const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -15,7 +16,7 @@ export default function TriggerButton({ syncType }: TriggerButtonProps) {
 		setMessage(null);
 
 		try {
-			const response = await fetch(`/api/trigger/${syncType}`, {
+			const response = await fetch(`/api/trigger/${syncType}?env=${tripletexEnv}`, {
 				method: "POST",
 			});
 
