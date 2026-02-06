@@ -134,6 +134,23 @@ src/
 - **product_mapping**: Maps Rubic `productCode` to Tripletex `productId` with change-detection hash
 - **invoice_mapping**: Maps Rubic `invoiceId` to Tripletex `invoiceId` with payment sync status
 
+## Commit Conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) and [semantic-release](https://github.com/semantic-release/semantic-release) for automated versioning and changelog generation.
+
+| Prefix       | Purpose                          | Version Bump |
+| ------------ | -------------------------------- | ------------ |
+| `feat:`      | New feature                      | Minor        |
+| `fix:`       | Bug fix                          | Patch        |
+| `docs:`      | Documentation only               | None         |
+| `chore:`     | Maintenance / tooling            | None         |
+| `refactor:`  | Code change (no feature/fix)     | None         |
+| `test:`      | Adding or updating tests         | None         |
+| `ci:`        | CI/CD configuration              | None         |
+| `perf:`      | Performance improvement          | Patch        |
+
+Breaking changes: add `BREAKING CHANGE:` in the commit body or use `feat!:` / `fix!:` prefix for a major version bump.
+
 ## Environment Variables
 
 See [`.env.example`](.env.example) for all required variables. Key groups:
