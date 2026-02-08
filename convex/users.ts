@@ -1,6 +1,8 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 import { authenticatedMutation, authenticatedQuery } from "./functions";
+import { updateAuth0User } from "./lib/auth0Management";
 
 /**
  * Store or update the current user's record in Convex.
@@ -23,20 +25,10 @@ export const store = mutation({
 		const now = Date.now();
 
 		if (existingUser) {
-			// Update existing user
-			const updates: {
-				lastActiveAt: number;
-				name?: string;
-			} = {
-				lastActiveAt: now,
-			};
-
-			// Update name if it differs
-			if (identity.name && identity.name !== existingUser.name) {
-				updates.name = identity.name;
-			}
-
-			await ctx.db.patch(existingUser._id, updates);
+			// Only update lastActiveAt on subsequent logins.
+			// Don't overwrite name/avatar — the user may have customised
+			// them via the profile page (Convex is SoT for app-level profile).
+			await ctx.db.patch(existingUser._id, { lastActiveAt: now });
 			return existingUser._id;
 		}
 
@@ -84,6 +76,74 @@ export const me = authenticatedQuery({
 	args: {},
 	handler: async (ctx) => {
 		return ctx.user;
+	},
+});
+
+/**
+ * Internal mutation to patch user profile data in Convex.
+ * Called from the `updateProfile` action after authentication.
+ */
+export const updateProfileData = internalMutation({
+	args: {
+		userId: v.id("users"),
+		name: v.optional(v.string()),
+		phone: v.optional(v.string()),
+		avatarUrl: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const updates: Record<string, string | undefined> = {};
+
+		if (args.name !== undefined) updates.name = args.name || undefined;
+		if (args.phone !== undefined) updates.phone = args.phone || undefined;
+		if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl || undefined;
+
+		if (Object.keys(updates).length > 0) {
+			await ctx.db.patch(args.userId, updates);
+		}
+	},
+});
+
+/**
+ * Update the current user's profile information.
+ * Updates Convex (SoT) first, then syncs the name to Auth0 so the
+ * identity provider stays consistent.
+ */
+export const updateProfile = action({
+	args: {
+		name: v.optional(v.string()),
+		phone: v.optional(v.string()),
+		avatarUrl: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new Error("Unauthenticated: you must be logged in.");
+		}
+
+		const user = await ctx.runQuery(api.users.current, {});
+		if (!user) {
+			throw new Error("User record not found. Please reload the page.");
+		}
+
+		// 1. Update Convex — the single source of truth for app-level profile data
+		await ctx.runMutation(internal.users.updateProfileData, {
+			userId: user._id,
+			name: args.name,
+			phone: args.phone,
+			avatarUrl: args.avatarUrl,
+		});
+
+		// 2. Sync name back to Auth0 so the identity provider stays in sync
+		if (args.name !== undefined) {
+			try {
+				await updateAuth0User(identity.subject, {
+					name: args.name.trim() || undefined,
+				});
+			} catch (error) {
+				// Log but don't fail — Convex is SoT, Auth0 sync is best-effort
+				console.error("Failed to sync name to Auth0:", error);
+			}
+		}
 	},
 });
 

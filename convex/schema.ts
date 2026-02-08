@@ -9,6 +9,7 @@ export default defineSchema({
 		tokenIdentifier: v.string(),
 		email: v.string(),
 		name: v.optional(v.string()),
+		phone: v.optional(v.string()),
 		avatarUrl: v.optional(v.string()),
 		preferences: v.optional(
 			v.object({

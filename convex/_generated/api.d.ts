@@ -17,6 +17,7 @@ import type * as integrationSchedules from "../integrationSchedules.js";
 import type * as invitations from "../invitations.js";
 import type * as invoiceMapping from "../invoiceMapping.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_auth0Management from "../lib/auth0Management.js";
 import type * as lib_mappers from "../lib/mappers.js";
 import type * as lib_rubicClient from "../lib/rubicClient.js";
 import type * as lib_tripletexClient from "../lib/tripletexClient.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   invitations: typeof invitations;
   invoiceMapping: typeof invoiceMapping;
   "lib/auth": typeof lib_auth;
+  "lib/auth0Management": typeof lib_auth0Management;
   "lib/mappers": typeof lib_mappers;
   "lib/rubicClient": typeof lib_rubicClient;
   "lib/tripletexClient": typeof lib_tripletexClient;

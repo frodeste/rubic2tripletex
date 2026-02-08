@@ -1,7 +1,15 @@
 "use client";
 
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { ArrowLeftRight, LayoutDashboard, LogOut, Network, Settings, User } from "lucide-react";
+import {
+	ArrowLeftRight,
+	Building2,
+	ChevronsUpDown,
+	LayoutDashboard,
+	LogOut,
+	Network,
+	Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OrgSwitcher } from "@/components/org-switcher";
@@ -12,7 +20,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuPositioner,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -49,6 +56,11 @@ const navItems = [
 		title: "Settings",
 		href: "/settings",
 		icon: Settings,
+	},
+	{
+		title: "Organization",
+		href: "/settings/organization",
+		icon: Building2,
 	},
 ];
 
@@ -104,33 +116,33 @@ export function AppSidebar() {
 						</div>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
+						<SidebarMenuButton
+							size="lg"
+							render={<Link href="/profile" />}
+							isActive={pathname === "/profile"}
+						>
+							<Avatar className="h-8 w-8 rounded-lg">
+								<AvatarImage src={user?.picture ?? undefined} alt={user?.name ?? "User"} />
+								<AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+							</Avatar>
+							<div className="grid flex-1 text-left text-sm leading-tight">
+								<span className="truncate font-semibold">{user?.name ?? "User"}</span>
+								<span className="truncate text-xs text-muted-foreground">{user?.email ?? ""}</span>
+							</div>
+						</SidebarMenuButton>
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								render={
-									<SidebarMenuButton
-										size="lg"
-										className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+									<button
+										type="button"
+										className="absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 									/>
 								}
 							>
-								<Avatar className="h-8 w-8 rounded-lg">
-									<AvatarImage src={user?.picture ?? undefined} alt={user?.name ?? "User"} />
-									<AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-								</Avatar>
-								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-semibold">{user?.name ?? "User"}</span>
-									<span className="truncate text-xs text-muted-foreground">
-										{user?.email ?? ""}
-									</span>
-								</div>
+								<ChevronsUpDown className="size-4" />
 							</DropdownMenuTrigger>
-							<DropdownMenuPositioner side="bottom" align="end">
-								<DropdownMenuContent className="min-w-56 rounded-lg">
-									<DropdownMenuItem className="gap-2" render={<Link href="/profile" />}>
-										<User className="size-4" />
-										<span>Profile</span>
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
+							<DropdownMenuPositioner side="top" align="end">
+								<DropdownMenuContent className="min-w-40 rounded-lg">
 									{/* biome-ignore lint/a11y/useAnchorContent: Content provided by DropdownMenuItem's render prop */}
 									<DropdownMenuItem className="gap-2" render={<a href="/auth/logout" />}>
 										<LogOut className="size-4" />

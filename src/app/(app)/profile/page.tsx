@@ -1,10 +1,14 @@
 "use client";
 
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { useQuery } from "convex/react";
-import { Loader2, Mail, Settings, Shield, User } from "lucide-react";
+import { useAction, useQuery } from "convex/react";
+import { Loader2, Mail, Pencil, Save, Settings, Shield, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/use-organization";
@@ -14,8 +18,52 @@ export default function ProfilePage() {
 	const { user: auth0User, isLoading: auth0Loading } = useUser();
 	const { userId, isLoading: orgLoading } = useOrganization();
 	const convexUser = useQuery(api.users.me, userId ? {} : "skip");
+	const updateProfile = useAction(api.users.updateProfile);
+
+	const [editing, setEditing] = useState(false);
+	const [saving, setSaving] = useState(false);
+	const [name, setName] = useState("");
+	const [phone, setPhone] = useState("");
+	const [avatarUrl, setAvatarUrl] = useState("");
 
 	const isLoading = auth0Loading || orgLoading || (userId && convexUser === undefined);
+
+	// Sync form state from Convex user data
+	useEffect(() => {
+		if (convexUser) {
+			setName(convexUser.name ?? "");
+			setPhone(convexUser.phone ?? "");
+			setAvatarUrl(convexUser.avatarUrl ?? "");
+		}
+	}, [convexUser]);
+
+	const handleSave = async () => {
+		setSaving(true);
+		try {
+			await updateProfile({
+				name: name.trim(),
+				phone: phone.trim(),
+				avatarUrl: avatarUrl.trim(),
+			});
+			toast.success("Profile updated");
+			setEditing(false);
+		} catch (error) {
+			console.error("Failed to update profile:", error);
+			toast.error("Failed to update profile", {
+				description: error instanceof Error ? error.message : String(error),
+			});
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleCancel = () => {
+		// Reset form to current values
+		setName(convexUser?.name ?? "");
+		setPhone(convexUser?.phone ?? "");
+		setAvatarUrl(convexUser?.avatarUrl ?? "");
+		setEditing(false);
+	};
 
 	if (isLoading) {
 		return (
@@ -25,14 +73,13 @@ export default function ProfilePage() {
 		);
 	}
 
-	const initials = auth0User?.name
-		? auth0User.name
-				.split(" ")
-				.map((n) => n[0])
-				.join("")
-				.toUpperCase()
-				.slice(0, 2)
-		: "U";
+	const displayName = name || auth0User?.name || "User";
+	const initials = displayName
+		.split(" ")
+		.map((n) => n[0])
+		.join("")
+		.toUpperCase()
+		.slice(0, 2);
 
 	const formatDate = (timestamp: number | undefined) => {
 		if (!timestamp) return "Never";
@@ -77,41 +124,139 @@ export default function ProfilePage() {
 					</TabsTrigger>
 				</TabsList>
 
-				<TabsContent value="general" className="mt-4">
+				<TabsContent value="general" className="mt-4 space-y-4">
+					{/* Profile Card */}
 					<Card>
 						<CardHeader>
-							<CardTitle>General Information</CardTitle>
-							<CardDescription>Your account details from Auth0</CardDescription>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle>Profile Information</CardTitle>
+									<CardDescription>
+										Your display name, phone, and avatar used across the application
+									</CardDescription>
+								</div>
+								{!editing ? (
+									<Button
+										variant="outline"
+										size="sm"
+										className="gap-2"
+										onClick={() => setEditing(true)}
+									>
+										<Pencil className="h-4 w-4" />
+										Edit
+									</Button>
+								) : (
+									<div className="flex gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											className="gap-2"
+											onClick={handleCancel}
+											disabled={saving}
+										>
+											<X className="h-4 w-4" />
+											Cancel
+										</Button>
+										<Button size="sm" className="gap-2" onClick={handleSave} disabled={saving}>
+											{saving ? (
+												<Loader2 className="h-4 w-4 animate-spin" />
+											) : (
+												<Save className="h-4 w-4" />
+											)}
+											Save
+										</Button>
+									</div>
+								)}
+							</div>
 						</CardHeader>
 						<CardContent className="space-y-6">
 							<div className="flex items-center gap-6">
 								<Avatar className="h-24 w-24">
 									<AvatarImage
-										src={auth0User?.picture ?? undefined}
-										alt={auth0User?.name ?? "User"}
+										src={avatarUrl || auth0User?.picture || undefined}
+										alt={displayName}
 									/>
 									<AvatarFallback className="text-2xl">{initials}</AvatarFallback>
 								</Avatar>
-								<div className="space-y-1">
-									<h3 className="text-lg font-semibold">{auth0User?.name ?? "User"}</h3>
-									<div className="flex items-center gap-2 text-muted-foreground">
-										<Mail className="h-4 w-4" />
-										<span>{auth0User?.email ?? "No email"}</span>
+								{editing && (
+									<div className="flex-1 space-y-2">
+										<Label>Avatar URL</Label>
+										<Input
+											value={avatarUrl}
+											onChange={(e) => setAvatarUrl(e.target.value)}
+											placeholder="https://example.com/avatar.jpg"
+										/>
+										<p className="text-xs text-muted-foreground">
+											Leave empty to use your Auth0 profile picture
+										</p>
 									</div>
-								</div>
+								)}
 							</div>
 
-							<div className="space-y-4 border-t pt-4">
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label>Name</Label>
+									{editing ? (
+										<Input
+											value={name}
+											onChange={(e) => setName(e.target.value)}
+											placeholder="Your full name"
+										/>
+									) : (
+										<p className="text-sm">{convexUser?.name || "Not set"}</p>
+									)}
+								</div>
+
+								<div className="space-y-2">
+									<Label>
+										<span className="flex items-center gap-1.5">
+											<Mail className="h-3.5 w-3.5" />
+											Email
+										</span>
+									</Label>
+									<p className="text-sm">{convexUser?.email ?? auth0User?.email ?? "No email"}</p>
+									<p className="text-xs text-muted-foreground">
+										Managed by Auth0 — change via your identity provider
+									</p>
+								</div>
+
+								<div className="space-y-2">
+									<Label>Phone</Label>
+									{editing ? (
+										<Input
+											value={phone}
+											onChange={(e) => setPhone(e.target.value)}
+											placeholder="+47 123 45 678"
+											type="tel"
+										/>
+									) : (
+										<p className="text-sm">{convexUser?.phone || "Not set"}</p>
+									)}
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+
+					{/* Account Info Card (read-only) */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Account</CardTitle>
+							<CardDescription>Read-only account information from Auth0 and Convex</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="space-y-2">
 									<Label className="text-muted-foreground">Account ID</Label>
 									<p className="text-sm font-mono">{auth0User?.sub ?? "N/A"}</p>
 								</div>
-
+								<div className="space-y-2">
+									<Label className="text-muted-foreground">Auth Provider</Label>
+									<p className="text-sm">Auth0</p>
+								</div>
 								<div className="space-y-2">
 									<Label className="text-muted-foreground">Member since</Label>
 									<p className="text-sm">{formatDate(convexUser?.createdAt)}</p>
 								</div>
-
 								<div className="space-y-2">
 									<Label className="text-muted-foreground">Last active</Label>
 									<p className="text-sm">{formatDateTime(convexUser?.lastActiveAt)}</p>
@@ -149,7 +294,8 @@ export default function ProfilePage() {
 						</CardHeader>
 						<CardContent>
 							<p className="text-sm text-muted-foreground">
-								MFA and security settings will be available in a future update.
+								MFA and security settings are managed by Auth0. Visit your identity provider to
+								update password, enable MFA, or manage connected accounts.
 							</p>
 						</CardContent>
 					</Card>

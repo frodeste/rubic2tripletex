@@ -12,6 +12,7 @@ import {
 	Trash2,
 	Users,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -487,8 +488,15 @@ export default function SettingsPage() {
 				<TabsContent value="members" className="mt-4">
 					<Card>
 						<CardHeader>
-							<CardTitle className="text-lg">Organization Members</CardTitle>
-							<CardDescription>Manage who has access to {organizationName}</CardDescription>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="text-lg">Organization Members</CardTitle>
+									<CardDescription>Manage who has access to {organizationName}</CardDescription>
+								</div>
+								<Button variant="outline" size="sm" render={<Link href="/settings/organization" />}>
+									Manage Organization
+								</Button>
+							</div>
 						</CardHeader>
 						<CardContent>
 							{members && members.length > 0 ? (
