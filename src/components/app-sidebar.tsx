@@ -35,6 +35,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import { getInitials } from "@/lib/utils";
 
 const navItems = [
 	{
@@ -68,14 +69,7 @@ export function AppSidebar() {
 	const pathname = usePathname();
 	const { user } = useUser();
 
-	const initials = user?.name
-		? user.name
-				.split(" ")
-				.map((n) => n[0])
-				.join("")
-				.toUpperCase()
-				.slice(0, 2)
-		: "U";
+	const initials = getInitials(user?.name, user?.email);
 
 	return (
 		<Sidebar>

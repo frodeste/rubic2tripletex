@@ -12,7 +12,8 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,19 +39,9 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/use-organization";
+import { getInitials } from "@/lib/utils";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
-
-function getInitials(name: string | undefined, email: string): string {
-	if (name) {
-		const parts = name.trim().split(/\s+/);
-		if (parts.length >= 2) {
-			return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-		}
-		return parts[0][0].toUpperCase();
-	}
-	return email[0].toUpperCase();
-}
 
 function RoleBadge({ role }: { role: "owner" | "admin" | "member" }) {
 	if (role === "owner") {
@@ -94,11 +85,15 @@ function InviteMemberDialog({ organizationId }: { organizationId: Id<"organizati
 				email: email.trim(),
 				role,
 			});
+			toast.success("Invitation sent");
 			setEmail("");
 			setRole("member");
 			setOpen(false);
 		} catch (error) {
 			console.error("Failed to create invitation:", error);
+			toast.error("Failed to send invitation", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setSaving(false);
 		}
@@ -154,6 +149,77 @@ function InviteMemberDialog({ organizationId }: { organizationId: Id<"organizati
 	);
 }
 
+function OrgDetailsForm({
+	organizationId,
+	initialName,
+	initialSlug,
+	isAdminOrOwner,
+}: {
+	organizationId: Id<"organizations">;
+	initialName: string;
+	initialSlug: string;
+	isAdminOrOwner: boolean;
+}) {
+	const updateOrganization = useMutation(api.organizations.update);
+	const [name, setName] = useState(initialName);
+	const [slug, setSlug] = useState(initialSlug);
+	const [saving, setSaving] = useState(false);
+
+	const handleSave = async () => {
+		setSaving(true);
+		try {
+			await updateOrganization({
+				organizationId,
+				name: name !== initialName ? name : undefined,
+				slug: slug !== initialSlug ? slug : undefined,
+			});
+			toast.success("Organization updated");
+		} catch (error) {
+			console.error("Failed to update organization:", error);
+			toast.error("Failed to update organization", {
+				description: error instanceof Error ? error.message : String(error),
+			});
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="text-lg">Organization Details</CardTitle>
+				<CardDescription>Update your organization name and slug</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="space-y-2">
+					<Label>Name</Label>
+					<Input
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						disabled={!isAdminOrOwner}
+						placeholder="Organization name"
+					/>
+				</div>
+				<div className="space-y-2">
+					<Label>Slug</Label>
+					<Input
+						value={slug}
+						onChange={(e) => setSlug(e.target.value)}
+						disabled={!isAdminOrOwner}
+						placeholder="organization-slug"
+					/>
+				</div>
+				{isAdminOrOwner && (
+					<Button onClick={handleSave} disabled={saving} className="gap-2">
+						{saving && <Loader2 className="h-4 w-4 animate-spin" />}
+						Save Changes
+					</Button>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
 export default function OrganizationProfilePage() {
 	const { organizationId, role, userId, isLoading: orgLoading } = useOrganization();
 
@@ -172,39 +238,10 @@ export default function OrganizationProfilePage() {
 		organizationId ? { organizationId } : "skip",
 	);
 
-	const updateOrganization = useMutation(api.organizations.update);
 	const removeMember = useMutation(api.organizations.removeMember);
 	const revokeInvitation = useMutation(api.invitations.revoke);
 
-	const [name, setName] = useState("");
-	const [slug, setSlug] = useState("");
-	const [saving, setSaving] = useState(false);
-
 	const isAdminOrOwner = role === "admin" || role === "owner";
-
-	// Update local state when organization data loads
-	useEffect(() => {
-		if (organization) {
-			setName(organization.name);
-			setSlug(organization.slug);
-		}
-	}, [organization]);
-
-	const handleSave = async () => {
-		if (!organizationId) return;
-		setSaving(true);
-		try {
-			await updateOrganization({
-				organizationId,
-				name: name !== organization?.name ? name : undefined,
-				slug: slug !== organization?.slug ? slug : undefined,
-			});
-		} catch (error) {
-			console.error("Failed to update organization:", error);
-		} finally {
-			setSaving(false);
-		}
-	};
 
 	const handleRemoveMember = async (memberUserId: Id<"users">) => {
 		if (!organizationId) return;
@@ -213,16 +250,24 @@ export default function OrganizationProfilePage() {
 				organizationId,
 				userId: memberUserId,
 			});
+			toast.success("Member removed");
 		} catch (error) {
 			console.error("Failed to remove member:", error);
+			toast.error("Failed to remove member", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		}
 	};
 
 	const handleRevokeInvitation = async (invitationId: Id<"invitations">) => {
 		try {
 			await revokeInvitation({ invitationId });
+			toast.success("Invitation revoked");
 		} catch (error) {
 			console.error("Failed to revoke invitation:", error);
+			toast.error("Failed to revoke invitation", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		}
 	};
 
@@ -265,38 +310,15 @@ export default function OrganizationProfilePage() {
 				</TabsList>
 
 				<TabsContent value="general" className="mt-4">
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-lg">Organization Details</CardTitle>
-							<CardDescription>Update your organization name and slug</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="space-y-2">
-								<Label>Name</Label>
-								<Input
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									disabled={!isAdminOrOwner}
-									placeholder="Organization name"
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label>Slug</Label>
-								<Input
-									value={slug}
-									onChange={(e) => setSlug(e.target.value)}
-									disabled={!isAdminOrOwner}
-									placeholder="organization-slug"
-								/>
-							</div>
-							{isAdminOrOwner && (
-								<Button onClick={handleSave} disabled={saving} className="gap-2">
-									{saving && <Loader2 className="h-4 w-4 animate-spin" />}
-									Save Changes
-								</Button>
-							)}
-						</CardContent>
-					</Card>
+					{/* key={organizationId} resets form state when switching orgs,
+					    avoiding useEffect sync that could overwrite in-progress edits */}
+					<OrgDetailsForm
+						key={organizationId}
+						organizationId={organizationId}
+						initialName={organization.name}
+						initialSlug={organization.slug}
+						isAdminOrOwner={isAdminOrOwner}
+					/>
 				</TabsContent>
 
 				<TabsContent value="members" className="mt-4 space-y-4">

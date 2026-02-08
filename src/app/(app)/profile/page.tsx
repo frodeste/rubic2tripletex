@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/use-organization";
+import { getInitials } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 
 export default function ProfilePage() {
@@ -74,12 +75,7 @@ export default function ProfilePage() {
 	}
 
 	const displayName = name || auth0User?.name || "User";
-	const initials = displayName
-		.split(" ")
-		.map((n) => n[0])
-		.join("")
-		.toUpperCase()
-		.slice(0, 2);
+	const initials = getInitials(displayName, convexUser?.email ?? auth0User?.email);
 
 	const formatDate = (timestamp: number | undefined) => {
 		if (!timestamp) return "Never";
