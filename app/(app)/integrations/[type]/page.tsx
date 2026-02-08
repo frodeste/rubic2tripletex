@@ -24,6 +24,7 @@ import {
 	Select,
 	SelectContent,
 	SelectItem,
+	SelectPositioner,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -277,8 +278,8 @@ export default function IntegrationDetailPage() {
 		return (
 			<div className="flex h-[50vh] flex-col items-center justify-center gap-4">
 				<h2 className="text-xl font-semibold">Unknown integration type</h2>
-				<Button asChild variant="outline">
-					<Link href="/integrations">Back to Integrations</Link>
+				<Button render={<Link href="/integrations" />} variant="outline">
+					Back to Integrations
 				</Button>
 			</div>
 		);
@@ -295,10 +296,8 @@ export default function IntegrationDetailPage() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center gap-4">
-				<Button variant="ghost" size="icon" asChild>
-					<Link href="/integrations">
-						<ArrowLeft className="h-4 w-4" />
-					</Link>
+				<Button variant="ghost" size="icon" render={<Link href="/integrations" />}>
+					<ArrowLeft className="h-4 w-4" />
 				</Button>
 				<div className="flex items-center gap-3">
 					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -312,14 +311,16 @@ export default function IntegrationDetailPage() {
 			</div>
 
 			<div className="flex items-center gap-4">
-				<Select value={env} onValueChange={(v) => setEnv(v as "sandbox" | "production")}>
+				<Select value={env} onValueChange={(v) => v && setEnv(v as "sandbox" | "production")}>
 					<SelectTrigger className="w-[160px]">
 						<SelectValue />
 					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="production">Production</SelectItem>
-						<SelectItem value="sandbox">Sandbox</SelectItem>
-					</SelectContent>
+					<SelectPositioner>
+						<SelectContent>
+							<SelectItem value="production">Production</SelectItem>
+							<SelectItem value="sandbox">Sandbox</SelectItem>
+						</SelectContent>
+					</SelectPositioner>
 				</Select>
 				<Button onClick={handleRun} disabled={isRunning || !organizationId} className="gap-2">
 					{isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}

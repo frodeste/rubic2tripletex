@@ -31,6 +31,7 @@ import {
 	Select,
 	SelectContent,
 	SelectItem,
+	SelectPositioner,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -104,11 +105,9 @@ function RubicCredentialForm() {
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" className="gap-2">
-					<Plus className="h-4 w-4" />
-					Configure Rubic
-				</Button>
+			<DialogTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+				<Plus className="h-4 w-4" />
+				Configure Rubic
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -241,11 +240,9 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" className="gap-2">
-					<Plus className="h-4 w-4" />
-					Configure Tripletex ({defaultEnv})
-				</Button>
+			<DialogTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+				<Plus className="h-4 w-4" />
+				Configure Tripletex ({defaultEnv})
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -255,14 +252,16 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 				<div className="space-y-4 py-4">
 					<div className="space-y-2">
 						<Label>Environment</Label>
-						<Select value={env} onValueChange={(v) => setEnv(v as "sandbox" | "production")}>
+						<Select value={env} onValueChange={(v) => v && setEnv(v as "sandbox" | "production")}>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="production">Production</SelectItem>
-								<SelectItem value="sandbox">Sandbox</SelectItem>
-							</SelectContent>
+							<SelectPositioner>
+								<SelectContent>
+									<SelectItem value="production">Production</SelectItem>
+									<SelectItem value="sandbox">Sandbox</SelectItem>
+								</SelectContent>
+							</SelectPositioner>
 						</Select>
 					</div>
 					<div className="space-y-2">

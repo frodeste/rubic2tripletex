@@ -38,6 +38,7 @@ import {
 	Select,
 	SelectContent,
 	SelectItem,
+	SelectPositioner,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -107,11 +108,9 @@ function ScheduleDialog({ syncType, defaultCron }: { syncType: SyncType; default
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" className="gap-2">
-					<Clock className="h-3.5 w-3.5" />
-					Schedule
-				</Button>
+			<DialogTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+				<Clock className="h-3.5 w-3.5" />
+				Schedule
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -125,14 +124,16 @@ function ScheduleDialog({ syncType, defaultCron }: { syncType: SyncType; default
 				<div className="space-y-4 py-4">
 					<div className="space-y-2">
 						<Label>Environment</Label>
-						<Select value={env} onValueChange={(v) => setEnv(v as "sandbox" | "production")}>
+						<Select value={env} onValueChange={(v) => v && setEnv(v as "sandbox" | "production")}>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="production">Production</SelectItem>
-								<SelectItem value="sandbox">Sandbox</SelectItem>
-							</SelectContent>
+							<SelectPositioner>
+								<SelectContent>
+									<SelectItem value="production">Production</SelectItem>
+									<SelectItem value="sandbox">Sandbox</SelectItem>
+								</SelectContent>
+							</SelectPositioner>
 						</Select>
 					</div>
 					<div className="space-y-2">
@@ -197,14 +198,16 @@ function RunSyncButton({ syncType }: { syncType: SyncType }) {
 
 	return (
 		<div className="flex items-center gap-2">
-			<Select value={env} onValueChange={(v) => setEnv(v as "sandbox" | "production")}>
+			<Select value={env} onValueChange={(v) => v && setEnv(v as "sandbox" | "production")}>
 				<SelectTrigger className="w-[130px] h-8 text-xs">
 					<SelectValue />
 				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="production">Production</SelectItem>
-					<SelectItem value="sandbox">Sandbox</SelectItem>
-				</SelectContent>
+				<SelectPositioner>
+					<SelectContent>
+						<SelectItem value="production">Production</SelectItem>
+						<SelectItem value="sandbox">Sandbox</SelectItem>
+					</SelectContent>
+				</SelectPositioner>
 			</Select>
 			<Button
 				size="sm"
@@ -298,11 +301,14 @@ export default function IntegrationsPage() {
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
 										<ScheduleDialog syncType={sync.type} defaultCron={sync.defaultCron} />
-										<Button variant="outline" size="sm" asChild className="gap-2">
-											<Link href={`/integrations/${sync.type}`}>
-												<Settings className="h-3.5 w-3.5" />
-												Details
-											</Link>
+										<Button
+											variant="outline"
+											size="sm"
+											render={<Link href={`/integrations/${sync.type}`} />}
+											className="gap-2"
+										>
+											<Settings className="h-3.5 w-3.5" />
+											Details
 										</Button>
 									</div>
 									<RunSyncButton syncType={sync.type} />

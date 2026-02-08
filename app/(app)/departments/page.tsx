@@ -23,6 +23,7 @@ import {
 	Select,
 	SelectContent,
 	SelectItem,
+	SelectPositioner,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -154,14 +155,16 @@ export default function DepartmentsPage() {
 					<p className="text-muted-foreground">Map departments between Rubic and Tripletex</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Select value={env} onValueChange={(v) => setEnv(v as "sandbox" | "production")}>
+					<Select value={env} onValueChange={(v) => v && setEnv(v as "sandbox" | "production")}>
 						<SelectTrigger className="w-[160px]">
 							<SelectValue />
 						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="production">Production</SelectItem>
-							<SelectItem value="sandbox">Sandbox</SelectItem>
-						</SelectContent>
+						<SelectPositioner>
+							<SelectContent>
+								<SelectItem value="production">Production</SelectItem>
+								<SelectItem value="sandbox">Sandbox</SelectItem>
+							</SelectContent>
+						</SelectPositioner>
 					</Select>
 				</div>
 			</div>
@@ -210,15 +213,17 @@ export default function DepartmentsPage() {
 							</CardDescription>
 						</div>
 						<Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-							<DialogTrigger asChild>
-								<Button
-									size="sm"
-									className="gap-2"
-									disabled={rubicDepts.length === 0 || tripletexDepts.length === 0}
-								>
-									<Plus className="h-4 w-4" />
-									Add Mapping
-								</Button>
+							<DialogTrigger
+								render={
+									<Button
+										size="sm"
+										className="gap-2"
+										disabled={rubicDepts.length === 0 || tripletexDepts.length === 0}
+									/>
+								}
+							>
+								<Plus className="h-4 w-4" />
+								Add Mapping
 							</DialogTrigger>
 							<DialogContent>
 								<DialogHeader>
@@ -230,21 +235,26 @@ export default function DepartmentsPage() {
 								<div className="space-y-4 py-4">
 									<div className="space-y-2">
 										<Label>Rubic Department</Label>
-										<Select value={selectedRubicDept} onValueChange={setSelectedRubicDept}>
+										<Select
+											value={selectedRubicDept}
+											onValueChange={(v) => v !== null && setSelectedRubicDept(v)}
+										>
 											<SelectTrigger>
 												<SelectValue placeholder="Select Rubic department" />
 											</SelectTrigger>
-											<SelectContent>
-												{unmappedRubicDepts.map((d) => (
-													<SelectItem
-														key={d.productDepartmentID}
-														value={d.productDepartmentID.toString()}
-													>
-														{d.productDepartmentName ?? `Dept ${d.productDepartmentID}`}
-														{d.productDepartmentNumber ? ` (${d.productDepartmentNumber})` : ""}
-													</SelectItem>
-												))}
-											</SelectContent>
+											<SelectPositioner>
+												<SelectContent>
+													{unmappedRubicDepts.map((d) => (
+														<SelectItem
+															key={d.productDepartmentID}
+															value={d.productDepartmentID.toString()}
+														>
+															{d.productDepartmentName ?? `Dept ${d.productDepartmentID}`}
+															{d.productDepartmentNumber ? ` (${d.productDepartmentNumber})` : ""}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</SelectPositioner>
 										</Select>
 									</div>
 									<div className="flex justify-center">
@@ -252,18 +262,23 @@ export default function DepartmentsPage() {
 									</div>
 									<div className="space-y-2">
 										<Label>Tripletex Department</Label>
-										<Select value={selectedTripletexDept} onValueChange={setSelectedTripletexDept}>
+										<Select
+											value={selectedTripletexDept}
+											onValueChange={(v) => v !== null && setSelectedTripletexDept(v)}
+										>
 											<SelectTrigger>
 												<SelectValue placeholder="Select Tripletex department" />
 											</SelectTrigger>
-											<SelectContent>
-												{tripletexDepts.map((d) => (
-													<SelectItem key={d.id} value={d.id.toString()}>
-														{d.name ?? `Dept ${d.id}`}
-														{d.number ? ` (${d.number})` : ""}
-													</SelectItem>
-												))}
-											</SelectContent>
+											<SelectPositioner>
+												<SelectContent>
+													{tripletexDepts.map((d) => (
+														<SelectItem key={d.id} value={d.id.toString()}>
+															{d.name ?? `Dept ${d.id}`}
+															{d.number ? ` (${d.number})` : ""}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</SelectPositioner>
 										</Select>
 									</div>
 								</div>
