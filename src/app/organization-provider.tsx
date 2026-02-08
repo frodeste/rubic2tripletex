@@ -3,8 +3,8 @@
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Id } from "../convex/_generated/dataModel";
-import { api } from "../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { api } from "../../convex/_generated/api";
 import { OrganizationContext } from "@/hooks/use-organization";
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
