@@ -53,7 +53,10 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 			organizationId: selectedOrgId,
 			organizationName: selectedOrg?.name ?? null,
 			auth0OrgId: selectedOrg?.auth0OrgId ?? null,
-			role: (selectedOrg as any)?.role ?? null,
+			role: (selectedOrg && "role" in selectedOrg ? selectedOrg.role : null) as
+				| "admin"
+				| "member"
+				| null,
 			setOrganizationId,
 			isLoading,
 		}),

@@ -13,10 +13,11 @@ export const list = query({
 		await requireOrgMembership(ctx, args.organizationId);
 
 		if (args.tripletexEnv) {
+			const env = args.tripletexEnv;
 			return await ctx.db
 				.query("departmentMapping")
 				.withIndex("by_org_and_env", (q) =>
-					q.eq("organizationId", args.organizationId).eq("tripletexEnv", args.tripletexEnv!),
+					q.eq("organizationId", args.organizationId).eq("tripletexEnv", env),
 				)
 				.collect();
 		}

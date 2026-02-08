@@ -1,5 +1,5 @@
 import type { GenericQueryCtx } from "convex/server";
-import type { DataModel } from "../_generated/dataModel";
+import type { DataModel, Id } from "../_generated/dataModel";
 
 /**
  * Verify the caller is authenticated and return their identity.
@@ -19,14 +19,14 @@ export async function requireAuth(ctx: { auth: GenericQueryCtx<DataModel>["auth"
  */
 export async function requireOrgMembership(
 	ctx: { auth: GenericQueryCtx<DataModel>["auth"]; db: GenericQueryCtx<DataModel>["db"] },
-	organizationId: string,
+	organizationId: Id<"organizations">,
 ) {
 	const identity = await requireAuth(ctx);
 	const auth0UserId = identity.subject; // Auth0 `sub` claim
 
 	const membership = await ctx.db
 		.query("organizationMembers")
-		.withIndex("by_org_and_user", (q: any) =>
+		.withIndex("by_org_and_user", (q) =>
 			q.eq("organizationId", organizationId).eq("auth0UserId", auth0UserId),
 		)
 		.unique();
@@ -44,7 +44,7 @@ export async function requireOrgMembership(
  */
 export async function requireOrgAdmin(
 	ctx: { auth: GenericQueryCtx<DataModel>["auth"]; db: GenericQueryCtx<DataModel>["db"] },
-	organizationId: string,
+	organizationId: Id<"organizations">,
 ) {
 	const { identity, membership } = await requireOrgMembership(ctx, organizationId);
 

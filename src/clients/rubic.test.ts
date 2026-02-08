@@ -56,6 +56,7 @@ describe("RubicClient", () => {
 
 		await client.getCustomers();
 
+		// biome-ignore lint/style/noNonNullAssertion: guaranteed set by mock after await
 		expect(capturedHeaders!.get("Authorization")).toBe("Bearer test-api-key");
 	});
 

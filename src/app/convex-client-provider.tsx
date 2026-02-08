@@ -5,7 +5,11 @@ import { useCallback, useMemo } from "react";
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+if (!convexUrl) {
+	throw new Error("NEXT_PUBLIC_CONVEX_URL environment variable is not set");
+}
+const convex = new ConvexReactClient(convexUrl);
 
 /**
  * Custom auth hook that fetches the Auth0 ID token from our API route

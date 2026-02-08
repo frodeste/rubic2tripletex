@@ -1,8 +1,10 @@
 "use node";
 
 import { v } from "convex/values";
+import type { GenericActionCtx } from "convex/server";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { DataModel, Id } from "./_generated/dataModel";
 import { RubicClient } from "./lib/rubicClient";
 import { TripletexClient, type TripletexCustomer } from "./lib/tripletexClient";
 import {
@@ -22,8 +24,8 @@ interface CredentialPair {
 }
 
 async function getCredentials(
-	ctx: { runQuery: (query: any, args: any) => Promise<any> },
-	organizationId: any,
+	ctx: Pick<GenericActionCtx<DataModel>, "runQuery">,
+	organizationId: Id<"organizations">,
 	tripletexEnv: "sandbox" | "production",
 ): Promise<CredentialPair> {
 	const rubicCred = await ctx.runQuery(internal.apiCredentials.getRubicCredentials, {
@@ -213,7 +215,8 @@ export const runProducts = internalAction({
 
 			for (const rubicProduct of validProducts) {
 				try {
-					const productCode = rubicProduct.productCode!;
+					// productCode is guaranteed non-null by the filter above
+					const productCode = rubicProduct.productCode as string;
 					const hash = await computeProductHash(rubicProduct);
 
 					const existingMapping = await ctx.runQuery(internal.productMapping.getByRubicCode, {
@@ -358,7 +361,7 @@ export const runInvoices = internalAction({
 				tripletexEnv: args.tripletexEnv,
 				limit: 10000,
 			});
-			const syncedInvoiceIds = new Set(existingInvoiceMappings.map((m: any) => m.rubicInvoiceId));
+			const syncedInvoiceIds = new Set(existingInvoiceMappings.map((m) => m.rubicInvoiceId));
 
 			for (const invoice of rubicInvoices) {
 				try {
@@ -481,7 +484,7 @@ export const runPayments = internalAction({
 				organizationId: args.organizationId,
 				tripletexEnv: args.tripletexEnv,
 			});
-			const invoiceMap = new Map<number, any>();
+			const invoiceMap = new Map<number, (typeof unsyncedInvoices)[number]>();
 			for (const m of unsyncedInvoices) {
 				invoiceMap.set(m.rubicInvoiceId, m);
 			}
@@ -684,11 +687,8 @@ export const fetchDepartmentsFromTripletex = internalAction({
  * Works in action context (no ctx.db) by using ctx.runQuery.
  */
 async function requireAuthAndMembership(
-	ctx: {
-		auth: { getUserIdentity: () => Promise<any> };
-		runQuery: (q: any, args: any) => Promise<any>;
-	},
-	organizationId: any,
+	ctx: Pick<GenericActionCtx<DataModel>, "auth" | "runQuery">,
+	organizationId: Id<"organizations">,
 ) {
 	const identity = await ctx.auth.getUserIdentity();
 	if (!identity) {

@@ -193,9 +193,7 @@ export default function DashboardPage() {
 
 	const enabledEnvs: Array<"sandbox" | "production"> = [];
 	if (credentials) {
-		const tripletexCreds = credentials.filter(
-			(c) => c.provider === "tripletex" && c.isEnabled,
-		);
+		const tripletexCreds = credentials.filter((c) => c.provider === "tripletex" && c.isEnabled);
 		for (const c of tripletexCreds) {
 			const env = c.environment as "sandbox" | "production";
 			if (!enabledEnvs.includes(env)) {

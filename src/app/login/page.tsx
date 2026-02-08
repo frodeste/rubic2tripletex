@@ -18,6 +18,7 @@ export default function LoginPage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
+					{/* biome-ignore lint/a11y/useAnchorContent: Content provided by Button's render prop */}
 					<Button render={<a href="/auth/login" />} className="w-full" size="lg">
 						Sign in with Auth0
 					</Button>

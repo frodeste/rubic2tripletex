@@ -39,7 +39,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/use-organization";
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 
 // --- Rubic Credential Form ---
 
@@ -173,7 +172,11 @@ function RubicCredentialForm() {
 						)}
 						Test Connection
 					</Button>
-					<Button onClick={handleSave} disabled={saving || !isOrgIdValid || !apiKey} className="gap-2">
+					<Button
+						onClick={handleSave}
+						disabled={saving || !isOrgIdValid || !apiKey}
+						className="gap-2"
+					>
 						{saving && <Loader2 className="h-4 w-4 animate-spin" />}
 						Save
 					</Button>
@@ -334,7 +337,7 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 }
 
 export default function SettingsPage() {
-	const { organizationId, organizationName, role, isLoading: orgLoading } = useOrganization();
+	const { organizationId, organizationName, isLoading: orgLoading } = useOrganization();
 
 	const credentials = useQuery(
 		api.apiCredentials.list,

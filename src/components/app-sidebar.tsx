@@ -131,6 +131,7 @@ export function AppSidebar() {
 										<span>Profile</span>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
+									{/* biome-ignore lint/a11y/useAnchorContent: Content provided by DropdownMenuItem's render prop */}
 									<DropdownMenuItem className="gap-2" render={<a href="/auth/logout" />}>
 										<LogOut className="size-4" />
 										<span>Log out</span>

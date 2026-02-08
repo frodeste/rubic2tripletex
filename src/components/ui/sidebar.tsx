@@ -2,10 +2,9 @@
 
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
+import Cookies from "js-cookie";
 import { PanelLeftIcon } from "lucide-react";
 import * as React from "react";
-
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +15,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Tooltip,
 	TooltipContent,
@@ -23,8 +23,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -83,8 +83,10 @@ function SidebarProvider({
 				_setOpen(openState);
 			}
 
-			// This sets the cookie to keep the sidebar state.
-			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+			Cookies.set(SIDEBAR_COOKIE_NAME, String(openState), {
+				path: "/",
+				expires: SIDEBAR_COOKIE_MAX_AGE / 86400, // js-cookie uses days
+			});
 		},
 		[setOpenProp, open],
 	);
@@ -92,7 +94,7 @@ function SidebarProvider({
 	// Helper to toggle the sidebar.
 	const toggleSidebar = React.useCallback(() => {
 		return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
-	}, [isMobile, setOpen, setOpenMobile]);
+	}, [isMobile, setOpen]);
 
 	// Adds a keyboard shortcut to toggle the sidebar.
 	React.useEffect(() => {
@@ -121,7 +123,7 @@ function SidebarProvider({
 			setOpenMobile,
 			toggleSidebar,
 		}),
-		[state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+		[state, open, setOpen, isMobile, openMobile, toggleSidebar],
 	);
 
 	return (
@@ -401,7 +403,7 @@ function SidebarGroupLabel({
 
 function SidebarGroupAction({
 	className,
-	render = <button />,
+	render = <button type="button" />,
 	...props
 }: React.ComponentProps<"button"> & { render?: useRender.RenderProp }) {
 	return useRender({
@@ -477,7 +479,7 @@ const sidebarMenuButtonVariants = cva(
 );
 
 function SidebarMenuButton({
-	render = <button />,
+	render = <button type="button" />,
 	isActive = false,
 	variant = "default",
 	size = "default",
@@ -489,7 +491,8 @@ function SidebarMenuButton({
 	isActive?: boolean;
 	tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
-	const { isMobile, state } = useSidebar();
+	// Subscribe to sidebar context for state-driven re-renders
+	useSidebar();
 
 	const button = useRender({
 		render,
@@ -515,7 +518,7 @@ function SidebarMenuButton({
 
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<>{button}</>} />
+			<TooltipTrigger render={button} />
 			<TooltipPositioner side="right" align="center">
 				<TooltipContent {...tooltip} />
 			</TooltipPositioner>
@@ -525,7 +528,7 @@ function SidebarMenuButton({
 
 function SidebarMenuAction({
 	className,
-	render = <button />,
+	render = <button type="button" />,
 	showOnHover = false,
 	...props
 }: React.ComponentProps<"button"> & {
@@ -623,6 +626,8 @@ function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<"li">)
 }
 
 function SidebarMenuSubButton({
+	// biome-ignore lint/a11y/useAnchorContent: Default render element — content provided at usage sites
+	// biome-ignore lint/a11y/useValidAnchor: Default render element — href provided at usage sites
 	render = <a />,
 	size = "md",
 	isActive = false,

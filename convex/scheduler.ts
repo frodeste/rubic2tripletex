@@ -61,14 +61,14 @@ export const checkAndDispatch = internalAction({
 
 			// Dispatch the sync action
 			const syncType = schedule.syncType;
-			const actionMap: Record<string, any> = {
+			const actionMap = {
 				customers: internal.sync.runCustomers,
 				products: internal.sync.runProducts,
 				invoices: internal.sync.runInvoices,
 				payments: internal.sync.runPayments,
-			};
+			} as const;
 
-			const syncAction = actionMap[syncType];
+			const syncAction = actionMap[syncType as keyof typeof actionMap];
 			if (syncAction) {
 				try {
 					await ctx.runAction(syncAction, {
