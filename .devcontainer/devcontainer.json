@@ -1,121 +1,121 @@
 {
-  "name": "Rubic2Tripletex",
-  // Base image: official TypeScript + Node.js 24 (includes TypeScript globally)
-  // The devcontainers/ci GitHub Action builds this + features into a pre-built image on GHCR
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
-  "workspaceFolder": "/workspaces/rubic2tripletex",
-  "features": {
-    // ---- Shell and utilities ----
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "installOhMyZsh": true,
-      "configureZshAsDefaultShell": true,
-      "upgradePackages": true
-    },
-    "ghcr.io/devcontainers/features/github-cli:1": {
-      "installDirectlyFromGitHubRelease": true,
-      "version": "latest"
-    },
+	"name": "Rubic2Tripletex",
+	// Base image: official TypeScript + Node.js 24 (includes TypeScript globally)
+	// The devcontainers/ci GitHub Action builds this + features into a pre-built image on GHCR
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
+	"workspaceFolder": "/workspaces/rubic2tripletex",
+	"features": {
+		// ---- Shell and utilities ----
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"installOhMyZsh": true,
+			"configureZshAsDefaultShell": true,
+			"upgradePackages": true
+		},
+		"ghcr.io/devcontainers/features/github-cli:1": {
+			"installDirectlyFromGitHubRelease": true,
+			"version": "latest"
+		},
 
-    // ---- AI coding tools ----
-    "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {},
-    "ghcr.io/jsburckhardt/devcontainer-features/codex:1": {},
+		// ---- AI coding tools ----
+		"ghcr.io/stu-bell/devcontainer-features/claude-code:0": {},
+		"ghcr.io/jsburckhardt/devcontainer-features/codex:1": {},
 
-    // ---- Package managers and runtimes ----
-    "ghcr.io/devcontainers-extra/features/bun:1": {},
+		// ---- Package managers and runtimes ----
+		"ghcr.io/devcontainers-extra/features/bun:1": {},
 
-    // ---- System tools ----
-    "ghcr.io/flexwie/devcontainer-features/op:1": {},
-    "ghcr.io/rails/devcontainer/features/postgres-client:1": {},
-    "ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
-      "packages": "build-essential,pkg-config,libssl-dev,jq,httpie"
-    },
+		// ---- System tools ----
+		"ghcr.io/flexwie/devcontainer-features/op:1": {},
+		"ghcr.io/rails/devcontainer/features/postgres-client:1": {},
+		"ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
+			"packages": "build-essential,pkg-config,libssl-dev,jq,httpie"
+		},
 
-    // ---- CLI utilities ----
-    "ghcr.io/devcontainers-extra/features/fzf:1": {},
-    "ghcr.io/devcontainers-extra/features/fd:1": {},
-    "ghcr.io/jsburckhardt/devcontainer-features/bat:1": {},
+		// ---- CLI utilities ----
+		"ghcr.io/devcontainers-extra/features/fzf:1": {},
+		"ghcr.io/devcontainers-extra/features/fd:1": {},
+		"ghcr.io/jsburckhardt/devcontainer-features/bat:1": {},
 
-    // ---- Zsh plugins ----
-    "ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
-      "plugins": "zsh-autosuggestions zsh-syntax-highlighting zsh-completions",
-      "omzPlugins": "https://github.com/Aloxaf/fzf-tab"
-    },
+		// ---- Zsh plugins ----
+		"ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
+			"plugins": "zsh-autosuggestions zsh-syntax-highlighting zsh-completions",
+			"omzPlugins": "https://github.com/Aloxaf/fzf-tab"
+		},
 
-    // ---- Global npm tools (TypeScript comes with base image) ----
-    "ghcr.io/devcontainers-extra/features/npm-packages:1": {
-      "packages": "@biomejs/biome,vercel"
-    }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "biomejs.biome",
-        "bradlc.vscode-tailwindcss",
-        "yoavbls.pretty-ts-errors",
-        "eamodio.gitlens",
-        "redhat.vscode-yaml"
-      ],
-      "settings": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "editor.formatOnSave": true,
-        "editor.formatOnPaste": true,
-        "editor.codeActionsOnSave": {
-          "quickfix.biome": "explicit",
-          "source.organizeImports.biome": "explicit"
-        },
-        "[javascript]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "[javascriptreact]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "[typescript]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "[typescriptreact]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "[json]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "[jsonc]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "[css]": {
-          "editor.defaultFormatter": "biomejs.biome"
-        },
-        "files.eol": "\n",
-        "files.insertFinalNewline": true,
-        "files.trimTrailingWhitespace": true,
-        "typescript.preferences.importModuleSpecifier": "relative",
-        "typescript.tsdk": "node_modules/typescript/lib",
-        "biome.enabled": true,
-        "tailwindCSS.experimental.classRegex": [
-          ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-          ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
-        ]
-      }
-    }
-  },
-  "forwardPorts": [3000],
-  "portsAttributes": {
-    "3000": {
-      "label": "Next.js",
-      "onAutoForward": "notify"
-    }
-  },
-  "containerEnv": {
-    "NEXT_TELEMETRY_DISABLED": "1",
-    "SKIP_ENV_VALIDATION": "true"
-  },
-  "remoteEnv": {
-    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
-    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
-    "VERCEL_TOKEN": "${localEnv:VERCEL_TOKEN}",
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
-    "SENTRY_AUTH_TOKEN": "${localEnv:SENTRY_AUTH_TOKEN}"
-  },
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "remoteUser": "node"
+		// ---- Global npm tools (TypeScript comes with base image) ----
+		"ghcr.io/devcontainers-extra/features/npm-packages:1": {
+			"packages": "@biomejs/biome,vercel"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"biomejs.biome",
+				"bradlc.vscode-tailwindcss",
+				"yoavbls.pretty-ts-errors",
+				"eamodio.gitlens",
+				"redhat.vscode-yaml"
+			],
+			"settings": {
+				"editor.defaultFormatter": "biomejs.biome",
+				"editor.formatOnSave": true,
+				"editor.formatOnPaste": true,
+				"editor.codeActionsOnSave": {
+					"quickfix.biome": "explicit",
+					"source.organizeImports.biome": "explicit"
+				},
+				"[javascript]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[javascriptreact]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[typescript]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[typescriptreact]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[json]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[jsonc]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[css]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"files.eol": "\n",
+				"files.insertFinalNewline": true,
+				"files.trimTrailingWhitespace": true,
+				"typescript.preferences.importModuleSpecifier": "relative",
+				"typescript.tsdk": "node_modules/typescript/lib",
+				"biome.enabled": true,
+				"tailwindCSS.experimental.classRegex": [
+					["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+					["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+				]
+			}
+		}
+	},
+	"forwardPorts": [3000],
+	"portsAttributes": {
+		"3000": {
+			"label": "Next.js",
+			"onAutoForward": "notify"
+		}
+	},
+	"containerEnv": {
+		"NEXT_TELEMETRY_DISABLED": "1",
+		"SKIP_ENV_VALIDATION": "true"
+	},
+	"remoteEnv": {
+		"ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+		"OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+		"VERCEL_TOKEN": "${localEnv:VERCEL_TOKEN}",
+		"GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+		"SENTRY_AUTH_TOKEN": "${localEnv:SENTRY_AUTH_TOKEN}"
+	},
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
+	"remoteUser": "node"
 }

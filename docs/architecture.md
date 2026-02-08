@@ -32,8 +32,8 @@ Both sandbox and production Tripletex environments run independently with separa
 | `/api/cron/sync-{type}` | GET | CRON_SECRET | Automated sync (4 types) |
 | `/api/trigger/{syncType}` | POST | Auth0 | Manual sync from dashboard |
 | `/api/health` | GET | None | Health check and sync status |
-| `/api/auth/login` | GET | None | Auth0 login |
-| `/api/auth/logout` | GET | Auth0 | Auth0 logout |
+| `/auth/login` | GET | None | Auth0 login |
+| `/auth/logout` | GET | Auth0 | Auth0 logout |
 
 ## Database Schema
 

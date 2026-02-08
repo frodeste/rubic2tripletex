@@ -26,14 +26,21 @@
 			"semicolons": "always"
 		}
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"files": {
 		"includes": [
 			"**/*.ts",
 			"**/*.tsx",
 			"**/*.json",
+			"**/*.css",
 			"!!**/.next",
 			"!!**/node_modules",
-			"!!**/bun.lock"
+			"!!**/bun.lock",
+			"!!**/convex/_generated"
 		]
 	},
 	"assist": {
