@@ -13,10 +13,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
 	const auth0UserId = user?.sub ?? "";
 
-	const orgs = useQuery(
-		api.organizations.listForUser,
-		auth0UserId ? { auth0UserId } : "skip",
-	);
+	const orgs = useQuery(api.organizations.listForUser, auth0UserId ? { auth0UserId } : "skip");
 
 	const isLoading = userLoading || orgs === undefined;
 
@@ -62,7 +59,5 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 		[selectedOrgId, selectedOrg, setOrganizationId, isLoading],
 	);
 
-	return (
-		<OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>
-	);
+	return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
 }

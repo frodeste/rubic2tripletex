@@ -60,21 +60,30 @@ function StatusBadge({ status }: { status: string }) {
 	switch (status) {
 		case "success":
 			return (
-				<Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+				<Badge
+					variant="default"
+					className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+				>
 					<CheckCircle2 className="mr-1 h-3 w-3" />
 					Success
 				</Badge>
 			);
 		case "failed":
 			return (
-				<Badge variant="default" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20">
+				<Badge
+					variant="default"
+					className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+				>
 					<XCircle className="mr-1 h-3 w-3" />
 					Failed
 				</Badge>
 			);
 		case "running":
 			return (
-				<Badge variant="default" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+				<Badge
+					variant="default"
+					className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+				>
 					<Loader2 className="mr-1 h-3 w-3 animate-spin" />
 					Running
 				</Badge>
@@ -89,23 +98,17 @@ function MappingsTable({ type, env }: { type: SyncType; env: "sandbox" | "produc
 
 	const customerMappings = useQuery(
 		api.customerMapping.list,
-		type === "customers" && organizationId
-			? { organizationId, tripletexEnv: env }
-			: "skip",
+		type === "customers" && organizationId ? { organizationId, tripletexEnv: env } : "skip",
 	);
 
 	const productMappings = useQuery(
 		api.productMapping.list,
-		type === "products" && organizationId
-			? { organizationId, tripletexEnv: env }
-			: "skip",
+		type === "products" && organizationId ? { organizationId, tripletexEnv: env } : "skip",
 	);
 
 	const invoiceMappings = useQuery(
 		api.invoiceMapping.list,
-		type === "invoices" && organizationId
-			? { organizationId, tripletexEnv: env }
-			: "skip",
+		type === "invoices" && organizationId ? { organizationId, tripletexEnv: env } : "skip",
 	);
 
 	if (type === "customers") {
@@ -246,9 +249,7 @@ export default function IntegrationDetailPage() {
 		organizationId ? { organizationId, limit: 20 } : "skip",
 	);
 
-	const filteredRuns = syncRuns?.filter(
-		(r) => r.syncType === type && r.tripletexEnv === env,
-	);
+	const filteredRuns = syncRuns?.filter((r) => r.syncType === type && r.tripletexEnv === env);
 
 	const runSync = useAction(
 		type === "customers"
@@ -305,9 +306,7 @@ export default function IntegrationDetailPage() {
 					</div>
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight">{config.label} Sync</h1>
-						<p className="text-muted-foreground">
-							Mapping details and run history
-						</p>
+						<p className="text-muted-foreground">Mapping details and run history</p>
 					</div>
 				</div>
 			</div>
@@ -322,16 +321,8 @@ export default function IntegrationDetailPage() {
 						<SelectItem value="sandbox">Sandbox</SelectItem>
 					</SelectContent>
 				</Select>
-				<Button
-					onClick={handleRun}
-					disabled={isRunning || !organizationId}
-					className="gap-2"
-				>
-					{isRunning ? (
-						<Loader2 className="h-4 w-4 animate-spin" />
-					) : (
-						<Play className="h-4 w-4" />
-					)}
+				<Button onClick={handleRun} disabled={isRunning || !organizationId} className="gap-2">
+					{isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
 					Run {config.label} Sync
 				</Button>
 			</div>
@@ -350,9 +341,7 @@ export default function IntegrationDetailPage() {
 								Current mappings between Rubic and Tripletex records
 							</CardDescription>
 						</CardHeader>
-						<CardContent>
-							{organizationId && <MappingsTable type={type} env={env} />}
-						</CardContent>
+						<CardContent>{organizationId && <MappingsTable type={type} env={env} />}</CardContent>
 					</Card>
 				</TabsContent>
 
@@ -361,8 +350,7 @@ export default function IntegrationDetailPage() {
 						<CardHeader>
 							<CardTitle className="text-lg">Run History</CardTitle>
 							<CardDescription>
-								Recent {config.label.toLowerCase()} sync runs for{" "}
-								{env}
+								Recent {config.label.toLowerCase()} sync runs for {env}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -390,12 +378,8 @@ export default function IntegrationDetailPage() {
 												<TableCell className="text-muted-foreground">
 													{formatDate(run.completedAt)}
 												</TableCell>
-												<TableCell className="text-right">
-													{run.recordsProcessed}
-												</TableCell>
-												<TableCell className="text-right">
-													{run.recordsFailed}
-												</TableCell>
+												<TableCell className="text-right">{run.recordsProcessed}</TableCell>
+												<TableCell className="text-right">{run.recordsFailed}</TableCell>
 												<TableCell
 													className="max-w-[200px] truncate text-red-500"
 													title={run.errorMessage ?? undefined}
@@ -406,10 +390,7 @@ export default function IntegrationDetailPage() {
 										))
 									) : (
 										<TableRow>
-											<TableCell
-												colSpan={6}
-												className="py-8 text-center text-muted-foreground"
-											>
+											<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
 												No sync runs for this type and environment yet
 											</TableCell>
 										</TableRow>

@@ -13,6 +13,10 @@ export default withSentryConfig(nextConfig, {
 	org: process.env.SENTRY_ORG,
 	project: process.env.SENTRY_PROJECT,
 
-	// Automatically tree-shake Sentry logger statements
-	disableLogger: true,
+	// Tree-shake Sentry debug logging statements
+	webpack: {
+		treeshake: {
+			removeDebugLogging: true,
+		},
+	},
 });

@@ -1,14 +1,7 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import {
-	ArrowRight,
-	Loader2,
-	Network,
-	Plus,
-	RefreshCw,
-	Trash2,
-} from "lucide-react";
+import { ArrowRight, Loader2, Network, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -110,9 +103,7 @@ export default function DepartmentsPage() {
 		const rubicDept = rubicDepts.find(
 			(d) => d.productDepartmentID.toString() === selectedRubicDept,
 		);
-		const tripletexDept = tripletexDepts.find(
-			(d) => d.id.toString() === selectedTripletexDept,
-		);
+		const tripletexDept = tripletexDepts.find((d) => d.id.toString() === selectedTripletexDept);
 
 		if (!rubicDept || !tripletexDept) return;
 
@@ -153,24 +144,17 @@ export default function DepartmentsPage() {
 
 	// Filter out already-mapped departments
 	const mappedRubicIds = new Set(mappings?.map((m) => m.rubicDepartmentId) ?? []);
-	const unmappedRubicDepts = rubicDepts.filter(
-		(d) => !mappedRubicIds.has(d.productDepartmentID),
-	);
+	const unmappedRubicDepts = rubicDepts.filter((d) => !mappedRubicIds.has(d.productDepartmentID));
 
 	return (
 		<div className="space-y-6">
 			<div className="flex items-start justify-between">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">Department Mapping</h1>
-					<p className="text-muted-foreground">
-						Map departments between Rubic and Tripletex
-					</p>
+					<p className="text-muted-foreground">Map departments between Rubic and Tripletex</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Select
-						value={env}
-						onValueChange={(v) => setEnv(v as "sandbox" | "production")}
-					>
+					<Select value={env} onValueChange={(v) => setEnv(v as "sandbox" | "production")}>
 						<SelectTrigger className="w-[160px]">
 							<SelectValue />
 						</SelectTrigger>
@@ -196,9 +180,7 @@ export default function DepartmentsPage() {
 						<RefreshCw className="h-4 w-4" />
 					)}
 					Load Rubic Departments
-					{rubicDepts.length > 0 && (
-						<Badge variant="secondary">{rubicDepts.length}</Badge>
-					)}
+					{rubicDepts.length > 0 && <Badge variant="secondary">{rubicDepts.length}</Badge>}
 				</Button>
 				<Button
 					variant="outline"
@@ -212,9 +194,7 @@ export default function DepartmentsPage() {
 						<RefreshCw className="h-4 w-4" />
 					)}
 					Load Tripletex Departments
-					{tripletexDepts.length > 0 && (
-						<Badge variant="secondary">{tripletexDepts.length}</Badge>
-					)}
+					{tripletexDepts.length > 0 && <Badge variant="secondary">{tripletexDepts.length}</Badge>}
 				</Button>
 			</div>
 
@@ -250,10 +230,7 @@ export default function DepartmentsPage() {
 								<div className="space-y-4 py-4">
 									<div className="space-y-2">
 										<Label>Rubic Department</Label>
-										<Select
-											value={selectedRubicDept}
-											onValueChange={setSelectedRubicDept}
-										>
+										<Select value={selectedRubicDept} onValueChange={setSelectedRubicDept}>
 											<SelectTrigger>
 												<SelectValue placeholder="Select Rubic department" />
 											</SelectTrigger>
@@ -264,9 +241,7 @@ export default function DepartmentsPage() {
 														value={d.productDepartmentID.toString()}
 													>
 														{d.productDepartmentName ?? `Dept ${d.productDepartmentID}`}
-														{d.productDepartmentNumber
-															? ` (${d.productDepartmentNumber})`
-															: ""}
+														{d.productDepartmentNumber ? ` (${d.productDepartmentNumber})` : ""}
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -277,10 +252,7 @@ export default function DepartmentsPage() {
 									</div>
 									<div className="space-y-2">
 										<Label>Tripletex Department</Label>
-										<Select
-											value={selectedTripletexDept}
-											onValueChange={setSelectedTripletexDept}
-										>
+										<Select value={selectedTripletexDept} onValueChange={setSelectedTripletexDept}>
 											<SelectTrigger>
 												<SelectValue placeholder="Select Tripletex department" />
 											</SelectTrigger>
@@ -337,9 +309,7 @@ export default function DepartmentsPage() {
 										</TableCell>
 										<TableCell>
 											<div>
-												<span className="font-medium">
-													{m.tripletexDepartmentName}
-												</span>
+												<span className="font-medium">{m.tripletexDepartmentName}</span>
 												<span className="ml-2 text-xs text-muted-foreground">
 													ID: {m.tripletexDepartmentId}
 												</span>
@@ -359,12 +329,9 @@ export default function DepartmentsPage() {
 								))
 							) : (
 								<TableRow>
-									<TableCell
-										colSpan={4}
-										className="py-8 text-center text-muted-foreground"
-									>
-										No department mappings yet. Load departments from both systems, then
-										add mappings.
+									<TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+										No department mappings yet. Load departments from both systems, then add
+										mappings.
 									</TableCell>
 								</TableRow>
 							)}

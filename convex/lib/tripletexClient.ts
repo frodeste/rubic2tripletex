@@ -235,18 +235,14 @@ export class TripletexClient {
 		invoiceId: number,
 		payment: TripletexPayment,
 	): Promise<SingleResponse<TripletexPayment>> {
-		return this.request<SingleResponse<TripletexPayment>>(
-			"PUT",
-			`/invoice/${invoiceId}/:payment`,
-			{ body: payment },
-		);
+		return this.request<SingleResponse<TripletexPayment>>("PUT", `/invoice/${invoiceId}/:payment`, {
+			body: payment,
+		});
 	}
 
 	// --- Departments ---
 
-	async getDepartments(): Promise<
-		ListResponse<{ id: number; number?: string; name?: string }>
-	> {
+	async getDepartments(): Promise<ListResponse<{ id: number; number?: string; name?: string }>> {
 		return this.request<ListResponse<{ id: number; number?: string; name?: string }>>(
 			"GET",
 			"/department",

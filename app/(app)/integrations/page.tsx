@@ -75,13 +75,7 @@ const syncTypes = [
 
 type SyncType = (typeof syncTypes)[number]["type"];
 
-function ScheduleDialog({
-	syncType,
-	defaultCron,
-}: {
-	syncType: SyncType;
-	defaultCron: string;
-}) {
+function ScheduleDialog({ syncType, defaultCron }: { syncType: SyncType; defaultCron: string }) {
 	const { organizationId } = useOrganization();
 	const [open, setOpen] = useState(false);
 	const [cron, setCron] = useState(defaultCron);
@@ -174,11 +168,7 @@ function ScheduleDialog({
 	);
 }
 
-function RunSyncButton({
-	syncType,
-}: {
-	syncType: SyncType;
-}) {
+function RunSyncButton({ syncType }: { syncType: SyncType }) {
 	const { organizationId } = useOrganization();
 	const [isRunning, setIsRunning] = useState(false);
 	const [env, setEnv] = useState<"sandbox" | "production">("production");
@@ -254,9 +244,7 @@ export default function IntegrationsPage() {
 			<div className="flex h-[50vh] flex-col items-center justify-center gap-4">
 				<ArrowLeftRight className="h-12 w-12 text-muted-foreground" />
 				<h2 className="text-xl font-semibold">No Organization Selected</h2>
-				<p className="text-muted-foreground">
-					Select an organization to manage integrations.
-				</p>
+				<p className="text-muted-foreground">Select an organization to manage integrations.</p>
 			</div>
 		);
 	}
@@ -265,9 +253,7 @@ export default function IntegrationsPage() {
 		<div className="space-y-6">
 			<div>
 				<h1 className="text-2xl font-bold tracking-tight">Integrations</h1>
-				<p className="text-muted-foreground">
-					Configure, schedule, and run data sync operations
-				</p>
+				<p className="text-muted-foreground">Configure, schedule, and run data sync operations</p>
 			</div>
 
 			<div className="grid gap-4">
@@ -285,10 +271,7 @@ export default function IntegrationsPage() {
 										</div>
 										<div>
 											<CardTitle className="text-lg">
-												<Link
-													href={`/integrations/${sync.type}`}
-													className="hover:underline"
-												>
+												<Link href={`/integrations/${sync.type}`} className="hover:underline">
 													{sync.label}
 												</Link>
 											</CardTitle>
@@ -297,7 +280,10 @@ export default function IntegrationsPage() {
 									</div>
 									<div className="flex items-center gap-2">
 										{activeSchedules.length > 0 ? (
-											<Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+											<Badge
+												variant="default"
+												className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+											>
 												<Zap className="mr-1 h-3 w-3" />
 												{activeSchedules.length} active schedule
 												{activeSchedules.length !== 1 ? "s" : ""}

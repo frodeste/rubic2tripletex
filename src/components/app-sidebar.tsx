@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	ArrowLeftRight,
-	LayoutDashboard,
-	LogOut,
-	Network,
-	Settings,
-	User,
-} from "lucide-react";
+import { ArrowLeftRight, LayoutDashboard, LogOut, Network, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
@@ -119,10 +112,7 @@ export function AppSidebar() {
 									className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 								>
 									<Avatar className="h-8 w-8 rounded-lg">
-										<AvatarImage
-											src={user?.picture ?? undefined}
-											alt={user?.name ?? "User"}
-										/>
+										<AvatarImage src={user?.picture ?? undefined} alt={user?.name ?? "User"} />
 										<AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
 									</Avatar>
 									<div className="grid flex-1 text-left text-sm leading-tight">
@@ -145,7 +135,7 @@ export function AppSidebar() {
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem className="gap-2" asChild>
-									<a href="/api/auth/logout">
+									<a href="/auth/logout">
 										<LogOut className="size-4" />
 										<span>Log out</span>
 									</a>

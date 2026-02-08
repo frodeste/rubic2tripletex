@@ -5,7 +5,7 @@ export default async function Home() {
 	const session = await auth0.getSession();
 
 	if (!session) {
-		redirect("/api/auth/login");
+		redirect("/auth/login");
 	}
 
 	redirect("/dashboard");

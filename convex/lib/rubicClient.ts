@@ -155,9 +155,7 @@ export class RubicClient {
 	}
 
 	async getDepartments(): Promise<RubicDepartment[]> {
-		return this.fetchAllPages<RubicDepartment>(
-			`/accounting/${this.organizationId}/departments`,
-		);
+		return this.fetchAllPages<RubicDepartment>(`/accounting/${this.organizationId}/departments`);
 	}
 
 	async getInvoices(startPeriod?: Date, endPeriod?: Date): Promise<RubicInvoice[]> {

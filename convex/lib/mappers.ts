@@ -2,11 +2,7 @@
  * Data mapping and hashing functions for use in Convex actions.
  * Mirrors src/mappers/ but is self-contained within convex/ directory.
  */
-import type {
-	RubicCustomer,
-	RubicInvoice,
-	RubicProduct,
-} from "./rubicClient";
+import type { RubicCustomer, RubicInvoice, RubicProduct } from "./rubicClient";
 import type {
 	TripletexCustomer,
 	TripletexOrder,
@@ -114,8 +110,7 @@ export function mapRubicInvoiceToTripletexOrder(
 			const descriptionParts: string[] = [];
 			if (line.productName) descriptionParts.push(line.productName);
 			if (line.specification) descriptionParts.push(line.specification);
-			const description =
-				descriptionParts.length > 0 ? descriptionParts.join(" - ") : undefined;
+			const description = descriptionParts.length > 0 ? descriptionParts.join(" - ") : undefined;
 
 			const orderLine: TripletexOrderLine = {
 				product: { id: tripletexProductId },

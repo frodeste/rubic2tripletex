@@ -42,21 +42,30 @@ function StatusBadge({ status }: { status: string }) {
 	switch (status) {
 		case "success":
 			return (
-				<Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+				<Badge
+					variant="default"
+					className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+				>
 					<CheckCircle2 className="mr-1 h-3 w-3" />
 					Success
 				</Badge>
 			);
 		case "failed":
 			return (
-				<Badge variant="default" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20">
+				<Badge
+					variant="default"
+					className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
+				>
 					<XCircle className="mr-1 h-3 w-3" />
 					Failed
 				</Badge>
 			);
 		case "running":
 			return (
-				<Badge variant="default" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+				<Badge
+					variant="default"
+					className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+				>
 					<Loader2 className="mr-1 h-3 w-3 animate-spin" />
 					Running
 				</Badge>
@@ -68,11 +77,17 @@ function StatusBadge({ status }: { status: string }) {
 
 function EnvBadge({ env }: { env: string }) {
 	return env === "production" ? (
-		<Badge variant="default" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20">
+		<Badge
+			variant="default"
+			className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20"
+		>
 			Production
 		</Badge>
 	) : (
-		<Badge variant="default" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20">
+		<Badge
+			variant="default"
+			className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20"
+		>
 			Sandbox
 		</Badge>
 	);
@@ -170,16 +185,16 @@ export default function DashboardPage() {
 			<div className="flex h-[50vh] flex-col items-center justify-center gap-4">
 				<ArrowLeftRight className="h-12 w-12 text-muted-foreground" />
 				<h2 className="text-xl font-semibold">No Organization Selected</h2>
-				<p className="text-muted-foreground">
-					Select or create an organization to get started.
-				</p>
+				<p className="text-muted-foreground">Select or create an organization to get started.</p>
 			</div>
 		);
 	}
 
 	const enabledEnvs: Array<"sandbox" | "production"> = [];
 	if (credentials) {
-		const tripletexCreds = (credentials as any[]).filter((c: any) => c.provider === "tripletex" && c.isEnabled);
+		const tripletexCreds = (credentials as any[]).filter(
+			(c: any) => c.provider === "tripletex" && c.isEnabled,
+		);
 		for (const c of tripletexCreds) {
 			if (!enabledEnvs.includes(c.environment as "sandbox" | "production")) {
 				enabledEnvs.push(c.environment as "sandbox" | "production");
@@ -243,9 +258,7 @@ export default function DashboardPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							{syncRuns && syncRuns.length > 0
-								? formatDate(syncRuns[0].startedAt)
-								: "-"}
+							{syncRuns && syncRuns.length > 0 ? formatDate(syncRuns[0].startedAt) : "-"}
 						</div>
 						<p className="text-xs text-muted-foreground">Most recent run</p>
 					</CardContent>
@@ -268,11 +281,7 @@ export default function DashboardPage() {
 									</div>
 									<div className="flex flex-wrap gap-2">
 										{(Object.keys(syncTypeConfig) as SyncType[]).map((type) => (
-											<QuickSyncButton
-												key={`${env}-${type}`}
-												syncType={type}
-												tripletexEnv={env}
-											/>
+											<QuickSyncButton key={`${env}-${type}`} syncType={type} tripletexEnv={env} />
 										))}
 									</div>
 								</div>
@@ -321,9 +330,7 @@ export default function DashboardPage() {
 										<TableCell>
 											<EnvBadge env={run.tripletexEnv} />
 										</TableCell>
-										<TableCell className="font-medium capitalize">
-											{run.syncType}
-										</TableCell>
+										<TableCell className="font-medium capitalize">{run.syncType}</TableCell>
 										<TableCell>
 											<StatusBadge status={run.status} />
 										</TableCell>
@@ -333,12 +340,8 @@ export default function DashboardPage() {
 										<TableCell className="text-muted-foreground">
 											{formatDate(run.completedAt)}
 										</TableCell>
-										<TableCell className="text-right">
-											{run.recordsProcessed}
-										</TableCell>
-										<TableCell className="text-right">
-											{run.recordsFailed}
-										</TableCell>
+										<TableCell className="text-right">{run.recordsProcessed}</TableCell>
+										<TableCell className="text-right">{run.recordsFailed}</TableCell>
 										<TableCell
 											className="max-w-[200px] truncate text-red-500"
 											title={run.errorMessage ?? undefined}

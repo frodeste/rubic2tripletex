@@ -13,9 +13,7 @@ export const list = query({
 			return await ctx.db
 				.query("departmentMapping")
 				.withIndex("by_org_and_env", (q) =>
-					q
-						.eq("organizationId", args.organizationId)
-						.eq("tripletexEnv", args.tripletexEnv!),
+					q.eq("organizationId", args.organizationId).eq("tripletexEnv", args.tripletexEnv!),
 				)
 				.collect();
 		}

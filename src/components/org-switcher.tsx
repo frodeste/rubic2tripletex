@@ -11,19 +11,14 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	SidebarMenuButton,
-} from "@/components/ui/sidebar";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 
 export function OrgSwitcher() {
 	const { user } = useUser();
 	const { organizationId, organizationName, setOrganizationId } = useOrganization();
 
 	const auth0UserId = user?.sub ?? "";
-	const orgs = useQuery(
-		api.organizations.listForUser,
-		auth0UserId ? { auth0UserId } : "skip",
-	);
+	const orgs = useQuery(api.organizations.listForUser, auth0UserId ? { auth0UserId } : "skip");
 
 	return (
 		<DropdownMenu>

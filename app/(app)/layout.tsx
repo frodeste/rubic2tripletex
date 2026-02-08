@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { auth0 } from "@/auth0";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
 	const session = await auth0.getSession();
 
 	if (!session) {
-		redirect("/api/auth/login");
+		redirect("/auth/login");
 	}
 
 	return (

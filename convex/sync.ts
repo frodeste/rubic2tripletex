@@ -115,14 +115,10 @@ export const runCustomers = action({
 						const customerNumber = Number.parseInt(customerNo, 10);
 						let existingTtxCustomer: TripletexCustomer | null = null;
 						if (!Number.isNaN(customerNumber)) {
-							existingTtxCustomer =
-								await tripletexClient.getCustomerByNumber(customerNumber);
+							existingTtxCustomer = await tripletexClient.getCustomerByNumber(customerNumber);
 						}
 
-						if (
-							existingTtxCustomer?.id === tripletexCustomerId &&
-							existingTtxCustomer.version
-						) {
+						if (existingTtxCustomer?.id === tripletexCustomerId && existingTtxCustomer.version) {
 							tripletexCustomer.id = existingTtxCustomer.id;
 							tripletexCustomer.version = existingTtxCustomer.version;
 						} else {
@@ -136,16 +132,14 @@ export const runCustomers = action({
 						let existingTtxCustomer: TripletexCustomer | null = null;
 
 						if (!Number.isNaN(customerNumber)) {
-							existingTtxCustomer =
-								await tripletexClient.getCustomerByNumber(customerNumber);
+							existingTtxCustomer = await tripletexClient.getCustomerByNumber(customerNumber);
 						}
 
 						if (existingTtxCustomer?.id) {
 							tripletexCustomerId = existingTtxCustomer.id;
 						} else {
 							const tripletexCustomer = mapRubicCustomerToTripletex(rubicCustomer);
-							const createResponse =
-								await tripletexClient.createCustomer(tripletexCustomer);
+							const createResponse = await tripletexClient.createCustomer(tripletexCustomer);
 							if (!createResponse.value.id) {
 								throw new Error("Failed to create customer: no ID returned");
 							}
@@ -215,10 +209,7 @@ export const runProducts = action({
 		try {
 			const rubicProducts = await rubicClient.getProducts();
 			const validProducts = rubicProducts.filter(
-				(p) =>
-					p.productCode !== null &&
-					p.productCode !== undefined &&
-					p.productCode.trim() !== "",
+				(p) => p.productCode !== null && p.productCode !== undefined && p.productCode.trim() !== "",
 			);
 
 			for (const rubicProduct of validProducts) {
@@ -256,8 +247,7 @@ export const runProducts = action({
 						// Search or create in Tripletex
 						let tripletexProductId: number;
 
-						const existingTtxProduct =
-							await tripletexClient.getProductByNumber(productCode);
+						const existingTtxProduct = await tripletexClient.getProductByNumber(productCode);
 						if (existingTtxProduct?.id) {
 							tripletexProductId = existingTtxProduct.id;
 							// Update existing
@@ -343,9 +333,7 @@ export const runInvoices = action({
 				tripletexEnv: args.tripletexEnv,
 			});
 
-			const startPeriod = lastSync?.lastSyncAt
-				? new Date(lastSync.lastSyncAt)
-				: undefined;
+			const startPeriod = lastSync?.lastSyncAt ? new Date(lastSync.lastSyncAt) : undefined;
 			const endPeriod = new Date();
 
 			// Fetch invoices from Rubic
@@ -413,11 +401,7 @@ export const runInvoices = action({
 						continue;
 					}
 
-					const order = mapRubicInvoiceToTripletexOrder(
-						invoice,
-						tripletexCustomerId,
-						productMap,
-					);
+					const order = mapRubicInvoiceToTripletexOrder(invoice, tripletexCustomerId, productMap);
 
 					const orderResponse = await tripletexClient.createOrder(order);
 					if (!orderResponse.value.id) {
@@ -498,9 +482,7 @@ export const runPayments = action({
 				tripletexEnv: args.tripletexEnv,
 			});
 
-			const startPeriod = lastSync?.lastSyncAt
-				? new Date(lastSync.lastSyncAt)
-				: undefined;
+			const startPeriod = lastSync?.lastSyncAt ? new Date(lastSync.lastSyncAt) : undefined;
 			const endPeriod = new Date();
 
 			const transactions = await rubicClient.getInvoiceTransactions(startPeriod, endPeriod);

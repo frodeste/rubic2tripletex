@@ -9,11 +9,7 @@ export const syncType = v.union(
 	v.literal("payments"),
 );
 
-export const syncStatus = v.union(
-	v.literal("running"),
-	v.literal("success"),
-	v.literal("failed"),
-);
+export const syncStatus = v.union(v.literal("running"), v.literal("success"), v.literal("failed"));
 
 export const tripletexEnv = v.union(v.literal("sandbox"), v.literal("production"));
 

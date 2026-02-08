@@ -13,9 +13,6 @@ import {
 	Users,
 } from "lucide-react";
 import { useState } from "react";
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
-import { useOrganization } from "@/hooks/use-organization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,9 +34,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrganization } from "@/hooks/use-organization";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 // --- Rubic Credential Form ---
 
@@ -52,7 +51,11 @@ function RubicCredentialForm() {
 	const [enabled, setEnabled] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [testing, setTesting] = useState(false);
-	const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
+	const [testResult, setTestResult] = useState<{
+		success: boolean;
+		message?: string;
+		error?: string;
+	} | null>(null);
 
 	const upsertCredentials = useMutation(api.apiCredentials.upsert);
 	const testConnection = useAction(api.sync.testConnection);
@@ -110,9 +113,7 @@ function RubicCredentialForm() {
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Rubic API Credentials</DialogTitle>
-					<DialogDescription>
-						Configure your Rubic API connection details.
-					</DialogDescription>
+					<DialogDescription>Configure your Rubic API connection details.</DialogDescription>
 				</DialogHeader>
 				<div className="space-y-4 py-4">
 					<div className="space-y-2">
@@ -148,9 +149,7 @@ function RubicCredentialForm() {
 									: "bg-red-500/10 text-red-600 dark:text-red-400"
 							}`}
 						>
-							{testResult.success
-								? testResult.message
-								: `Error: ${testResult.error}`}
+							{testResult.success ? testResult.message : `Error: ${testResult.error}`}
 						</div>
 					)}
 				</div>
@@ -180,25 +179,23 @@ function RubicCredentialForm() {
 
 // --- Tripletex Credential Form ---
 
-function TripletexCredentialForm({
-	defaultEnv,
-}: {
-	defaultEnv: "sandbox" | "production";
-}) {
+function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "production" }) {
 	const { organizationId } = useOrganization();
 	const [open, setOpen] = useState(false);
 	const [env, setEnv] = useState(defaultEnv);
 	const [baseUrl, setBaseUrl] = useState(
-		defaultEnv === "sandbox"
-			? "https://api.tripletex.io/v2"
-			: "https://tripletex.no/v2",
+		defaultEnv === "sandbox" ? "https://api.tripletex.io/v2" : "https://tripletex.no/v2",
 	);
 	const [consumerToken, setConsumerToken] = useState("");
 	const [employeeToken, setEmployeeToken] = useState("");
 	const [enabled, setEnabled] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [testing, setTesting] = useState(false);
-	const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
+	const [testResult, setTestResult] = useState<{
+		success: boolean;
+		message?: string;
+		error?: string;
+	} | null>(null);
 
 	const upsertCredentials = useMutation(api.apiCredentials.upsert);
 	const testConnection = useAction(api.sync.testConnection);
@@ -253,9 +250,7 @@ function TripletexCredentialForm({
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Tripletex API Credentials</DialogTitle>
-					<DialogDescription>
-						Configure your Tripletex {env} connection details.
-					</DialogDescription>
+					<DialogDescription>Configure your Tripletex {env} connection details.</DialogDescription>
 				</DialogHeader>
 				<div className="space-y-4 py-4">
 					<div className="space-y-2">
@@ -304,9 +299,7 @@ function TripletexCredentialForm({
 									: "bg-red-500/10 text-red-600 dark:text-red-400"
 							}`}
 						>
-							{testResult.success
-								? testResult.message
-								: `Error: ${testResult.error}`}
+							{testResult.success ? testResult.message : `Error: ${testResult.error}`}
 						</div>
 					)}
 				</div>
@@ -370,9 +363,7 @@ export default function SettingsPage() {
 		<div className="space-y-6">
 			<div>
 				<h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-				<p className="text-muted-foreground">
-					Manage API credentials and organization settings
-				</p>
+				<p className="text-muted-foreground">Manage API credentials and organization settings</p>
 			</div>
 
 			<Tabs defaultValue="credentials">
@@ -418,18 +409,14 @@ export default function SettingsPage() {
 												</div>
 												<div>
 													<div className="flex items-center gap-2">
-														<span className="font-medium capitalize">
-															{cred.provider}
-														</span>
+														<span className="font-medium capitalize">{cred.provider}</span>
 														{cred.provider === "tripletex" && (
 															<Badge variant="outline" className="capitalize">
 																{cred.environment}
 															</Badge>
 														)}
 													</div>
-													<p className="text-sm text-muted-foreground">
-														{cred.baseUrl}
-													</p>
+													<p className="text-sm text-muted-foreground">{cred.baseUrl}</p>
 												</div>
 											</div>
 											<div className="flex items-center gap-3">
@@ -443,17 +430,14 @@ export default function SettingsPage() {
 												)}
 												{cred.lastVerifiedAt && (
 													<span className="text-xs text-muted-foreground">
-														Verified{" "}
-														{new Date(cred.lastVerifiedAt).toLocaleDateString()}
+														Verified {new Date(cred.lastVerifiedAt).toLocaleDateString()}
 													</span>
 												)}
 												<Button
 													variant="ghost"
 													size="icon"
 													className="h-8 w-8 text-destructive"
-													onClick={() =>
-														removeCredential({ credentialId: cred._id })
-													}
+													onClick={() => removeCredential({ credentialId: cred._id })}
 												>
 													<Trash2 className="h-4 w-4" />
 												</Button>
@@ -463,8 +447,7 @@ export default function SettingsPage() {
 								</div>
 							) : (
 								<div className="py-8 text-center text-muted-foreground">
-									No API credentials configured yet. Add your Rubic and Tripletex
-									credentials above.
+									No API credentials configured yet. Add your Rubic and Tripletex credentials above.
 								</div>
 							)}
 						</CardContent>
@@ -475,9 +458,7 @@ export default function SettingsPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle className="text-lg">Organization Members</CardTitle>
-							<CardDescription>
-								Manage who has access to {organizationName}
-							</CardDescription>
+							<CardDescription>Manage who has access to {organizationName}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{members && members.length > 0 ? (
@@ -488,28 +469,19 @@ export default function SettingsPage() {
 											className="flex items-center justify-between rounded-lg border p-4"
 										>
 											<div>
-												<span className="font-mono text-sm">
-													{member.auth0UserId}
-												</span>
+												<span className="font-mono text-sm">{member.auth0UserId}</span>
 												<p className="text-xs text-muted-foreground">
-													Joined{" "}
-													{new Date(member.joinedAt).toLocaleDateString()}
+													Joined {new Date(member.joinedAt).toLocaleDateString()}
 												</p>
 											</div>
-											<Badge
-												variant={
-													member.role === "admin" ? "default" : "secondary"
-												}
-											>
+											<Badge variant={member.role === "admin" ? "default" : "secondary"}>
 												{member.role}
 											</Badge>
 										</div>
 									))}
 								</div>
 							) : (
-								<div className="py-8 text-center text-muted-foreground">
-									No members found
-								</div>
+								<div className="py-8 text-center text-muted-foreground">No members found</div>
 							)}
 						</CardContent>
 					</Card>

@@ -87,9 +87,7 @@ export const update = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { organizationId, ...updates } = args;
-		const filtered = Object.fromEntries(
-			Object.entries(updates).filter(([, v]) => v !== undefined),
-		);
+		const filtered = Object.fromEntries(Object.entries(updates).filter(([, v]) => v !== undefined));
 		if (Object.keys(filtered).length > 0) {
 			await ctx.db.patch(organizationId, filtered);
 		}

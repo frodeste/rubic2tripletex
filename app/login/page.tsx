@@ -19,7 +19,7 @@ export default function LoginPage() {
 				</CardHeader>
 				<CardContent>
 					<Button asChild className="w-full" size="lg">
-						<a href="/api/auth/login">Sign in with Auth0</a>
+						<a href="/auth/login">Sign in with Auth0</a>
 					</Button>
 				</CardContent>
 			</Card>
