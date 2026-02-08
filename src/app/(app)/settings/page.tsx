@@ -13,6 +13,7 @@ import {
 	Users,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,7 +79,13 @@ function RubicCredentialForm() {
 				}),
 				isEnabled: enabled,
 			});
+			toast.success("Rubic credentials saved");
 			setOpen(false);
+		} catch (error) {
+			console.error("Failed to save Rubic credentials:", error);
+			toast.error("Failed to save Rubic credentials", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setSaving(false);
 		}
@@ -96,9 +103,13 @@ function RubicCredentialForm() {
 			});
 			setTestResult(result);
 		} catch (error) {
+			console.error("Rubic connection test failed:", error);
 			setTestResult({
 				success: false,
 				error: error instanceof Error ? error.message : String(error),
+			});
+			toast.error("Rubic connection test failed", {
+				description: error instanceof Error ? error.message : String(error),
 			});
 		} finally {
 			setTesting(false);
@@ -221,7 +232,13 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 				credentials: JSON.stringify({ consumerToken, employeeToken }),
 				isEnabled: enabled,
 			});
+			toast.success(`Tripletex ${env} credentials saved`);
 			setOpen(false);
+		} catch (error) {
+			console.error("Failed to save Tripletex credentials:", error);
+			toast.error("Failed to save Tripletex credentials", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setSaving(false);
 		}
@@ -239,9 +256,13 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 			});
 			setTestResult(result);
 		} catch (error) {
+			console.error("Tripletex connection test failed:", error);
 			setTestResult({
 				success: false,
 				error: error instanceof Error ? error.message : String(error),
+			});
+			toast.error("Tripletex connection test failed", {
+				description: error instanceof Error ? error.message : String(error),
 			});
 		} finally {
 			setTesting(false);

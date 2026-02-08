@@ -3,6 +3,7 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -70,7 +71,9 @@ export function OrgSwitcher() {
 			setDialogOpen(false);
 			setNewOrgName("");
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to create organization.");
+			const message = e instanceof Error ? e.message : "Failed to create organization.";
+			setError(message);
+			toast.error("Failed to create organization", { description: message });
 		} finally {
 			setIsCreating(false);
 		}
