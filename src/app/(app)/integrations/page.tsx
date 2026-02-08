@@ -176,12 +176,12 @@ function RunSyncButton({ syncType }: { syncType: SyncType }) {
 
 	const runSync = useAction(
 		syncType === "customers"
-			? api.sync.runCustomers
+			? api.sync.runCustomersPublic
 			: syncType === "products"
-				? api.sync.runProducts
+				? api.sync.runProductsPublic
 				: syncType === "invoices"
-					? api.sync.runInvoices
-					: api.sync.runPayments,
+					? api.sync.runInvoicesPublic
+					: api.sync.runPaymentsPublic,
 	);
 
 	const handleRun = async () => {

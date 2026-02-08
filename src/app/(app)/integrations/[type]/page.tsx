@@ -254,12 +254,12 @@ export default function IntegrationDetailPage() {
 
 	const runSync = useAction(
 		type === "customers"
-			? api.sync.runCustomers
+			? api.sync.runCustomersPublic
 			: type === "products"
-				? api.sync.runProducts
+				? api.sync.runProductsPublic
 				: type === "invoices"
-					? api.sync.runInvoices
-					: api.sync.runPayments,
+					? api.sync.runInvoicesPublic
+					: api.sync.runPaymentsPublic,
 	);
 
 	const handleRun = async () => {

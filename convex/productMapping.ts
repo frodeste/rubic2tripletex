@@ -1,9 +1,30 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, query } from "./_generated/server";
 import { tripletexEnv } from "./validators";
+import { requireOrgMembership } from "./lib/auth";
 
-/** List product mappings for an org and environment. */
+/** List product mappings for an org and environment (requires membership). */
 export const list = query({
+	args: {
+		organizationId: v.id("organizations"),
+		tripletexEnv: tripletexEnv,
+		limit: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
+
+		const limit = args.limit ?? 100;
+		return await ctx.db
+			.query("productMapping")
+			.withIndex("by_org_and_env", (q) =>
+				q.eq("organizationId", args.organizationId).eq("tripletexEnv", args.tripletexEnv),
+			)
+			.take(limit);
+	},
+});
+
+/** List product mappings — internal only (used by sync actions). */
+export const listInternal = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnv,
@@ -20,8 +41,8 @@ export const list = query({
 	},
 });
 
-/** Get a specific product mapping by Rubic product code. */
-export const getByRubicCode = query({
+/** Get a specific product mapping by Rubic product code — internal only. */
+export const getByRubicCode = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
 		rubicProductCode: v.string(),
@@ -40,8 +61,8 @@ export const getByRubicCode = query({
 	},
 });
 
-/** Create or update a product mapping. */
-export const upsert = mutation({
+/** Create or update a product mapping — internal only (used by sync). */
+export const upsert = internalMutation({
 	args: {
 		organizationId: v.id("organizations"),
 		rubicProductCode: v.string(),

@@ -1,9 +1,30 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, query } from "./_generated/server";
 import { tripletexEnv } from "./validators";
+import { requireOrgMembership } from "./lib/auth";
 
-/** List invoice mappings for an org and environment. */
+/** List invoice mappings for an org and environment (requires membership). */
 export const list = query({
+	args: {
+		organizationId: v.id("organizations"),
+		tripletexEnv: tripletexEnv,
+		limit: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
+
+		const limit = args.limit ?? 100;
+		return await ctx.db
+			.query("invoiceMapping")
+			.withIndex("by_org_and_env", (q) =>
+				q.eq("organizationId", args.organizationId).eq("tripletexEnv", args.tripletexEnv),
+			)
+			.take(limit);
+	},
+});
+
+/** List invoice mappings — internal only (used by sync actions). */
+export const listInternal = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnv,
@@ -20,8 +41,8 @@ export const list = query({
 	},
 });
 
-/** Get a specific invoice mapping by Rubic invoice ID. */
-export const getByRubicId = query({
+/** Get a specific invoice mapping by Rubic invoice ID — internal only. */
+export const getByRubicId = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
 		rubicInvoiceId: v.number(),
@@ -40,8 +61,8 @@ export const getByRubicId = query({
 	},
 });
 
-/** Get all unsynced payments for an org and environment. */
-export const getUnsyncedPayments = query({
+/** Get all unsynced payments for an org and environment — internal only. */
+export const getUnsyncedPayments = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnv,
@@ -57,8 +78,8 @@ export const getUnsyncedPayments = query({
 	},
 });
 
-/** Create or update an invoice mapping. */
-export const upsert = mutation({
+/** Create or update an invoice mapping — internal only (used by sync). */
+export const upsert = internalMutation({
 	args: {
 		organizationId: v.id("organizations"),
 		rubicInvoiceId: v.number(),
@@ -100,8 +121,8 @@ export const upsert = mutation({
 	},
 });
 
-/** Mark an invoice's payment as synced. */
-export const markPaymentSynced = mutation({
+/** Mark an invoice's payment as synced — internal only (used by sync). */
+export const markPaymentSynced = internalMutation({
 	args: { invoiceMappingId: v.id("invoiceMapping") },
 	handler: async (ctx, args) => {
 		await ctx.db.patch(args.invoiceMappingId, {

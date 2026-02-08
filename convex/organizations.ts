@@ -1,14 +1,18 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { memberRole } from "./validators";
+import { requireAuth, requireOrgAdmin, requireOrgMembership } from "./lib/auth";
 
-/** List organizations the current user belongs to. */
+/** List organizations the authenticated user belongs to. */
 export const listForUser = query({
-	args: { auth0UserId: v.string() },
-	handler: async (ctx, args) => {
+	args: {},
+	handler: async (ctx) => {
+		const identity = await requireAuth(ctx);
+		const auth0UserId = identity.subject;
+
 		const memberships = await ctx.db
 			.query("organizationMembers")
-			.withIndex("by_user", (q) => q.eq("auth0UserId", args.auth0UserId))
+			.withIndex("by_user", (q) => q.eq("auth0UserId", auth0UserId))
 			.collect();
 
 		const orgs = await Promise.all(
@@ -22,34 +26,55 @@ export const listForUser = query({
 	},
 });
 
-/** Get a single organization by ID. */
+/** Get a single organization by ID (requires membership). */
 export const get = query({
 	args: { organizationId: v.id("organizations") },
 	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
 		return await ctx.db.get(args.organizationId);
 	},
 });
 
-/** Get organization by Auth0 org ID. */
+/** Get organization by Auth0 org ID (requires membership). */
 export const getByAuth0OrgId = query({
 	args: { auth0OrgId: v.string() },
 	handler: async (ctx, args) => {
-		return await ctx.db
+		const identity = await requireAuth(ctx);
+		const org = await ctx.db
 			.query("organizations")
 			.withIndex("by_auth0OrgId", (q) => q.eq("auth0OrgId", args.auth0OrgId))
 			.unique();
+
+		if (!org) return null;
+
+		// Verify the caller is a member
+		const auth0UserId = identity.subject;
+		const membership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_org_and_user", (q) =>
+				q.eq("organizationId", org._id).eq("auth0UserId", auth0UserId),
+			)
+			.unique();
+
+		if (!membership) {
+			throw new Error("Forbidden: you are not a member of this organization.");
+		}
+
+		return org;
 	},
 });
 
-/** Create a new organization. */
+/** Create a new organization. The authenticated user becomes the admin. */
 export const create = mutation({
 	args: {
 		name: v.string(),
 		slug: v.string(),
 		auth0OrgId: v.string(),
-		creatorAuth0UserId: v.string(),
 	},
 	handler: async (ctx, args) => {
+		const identity = await requireAuth(ctx);
+		const auth0UserId = identity.subject;
+
 		// Check slug uniqueness
 		const existing = await ctx.db
 			.query("organizations")
@@ -69,7 +94,7 @@ export const create = mutation({
 		// Add creator as admin
 		await ctx.db.insert("organizationMembers", {
 			organizationId: orgId,
-			auth0UserId: args.creatorAuth0UserId,
+			auth0UserId,
 			role: "admin",
 			joinedAt: Date.now(),
 		});
@@ -78,7 +103,7 @@ export const create = mutation({
 	},
 });
 
-/** Update an organization. */
+/** Update an organization (requires admin). */
 export const update = mutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -86,6 +111,7 @@ export const update = mutation({
 		slug: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		await requireOrgAdmin(ctx, args.organizationId);
 		const { organizationId, ...updates } = args;
 		const filtered = Object.fromEntries(Object.entries(updates).filter(([, v]) => v !== undefined));
 		if (Object.keys(filtered).length > 0) {
@@ -94,10 +120,11 @@ export const update = mutation({
 	},
 });
 
-/** List members of an organization. */
+/** List members of an organization (requires membership). */
 export const listMembers = query({
 	args: { organizationId: v.id("organizations") },
 	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
 		return await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org", (q) => q.eq("organizationId", args.organizationId))
@@ -105,7 +132,7 @@ export const listMembers = query({
 	},
 });
 
-/** Add a member to an organization. */
+/** Add a member to an organization (requires admin). */
 export const addMember = mutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -113,6 +140,8 @@ export const addMember = mutation({
 		role: memberRole,
 	},
 	handler: async (ctx, args) => {
+		await requireOrgAdmin(ctx, args.organizationId);
+
 		// Check if already a member
 		const existing = await ctx.db
 			.query("organizationMembers")
@@ -133,13 +162,29 @@ export const addMember = mutation({
 	},
 });
 
-/** Remove a member from an organization. */
+/** Remove a member from an organization (requires admin). */
 export const removeMember = mutation({
 	args: {
 		organizationId: v.id("organizations"),
 		auth0UserId: v.string(),
 	},
 	handler: async (ctx, args) => {
+		const { membership: callerMembership } = await requireOrgAdmin(ctx, args.organizationId);
+
+		// Prevent the last admin from removing themselves
+		if (callerMembership.auth0UserId === args.auth0UserId) {
+			const admins = (
+				await ctx.db
+					.query("organizationMembers")
+					.withIndex("by_org", (q) => q.eq("organizationId", args.organizationId))
+					.collect()
+			).filter((m) => m.role === "admin");
+
+			if (admins.length <= 1) {
+				throw new Error("Cannot remove the last admin of an organization.");
+			}
+		}
+
 		const membership = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org_and_user", (q) =>
@@ -149,5 +194,25 @@ export const removeMember = mutation({
 		if (membership) {
 			await ctx.db.delete(membership._id);
 		}
+	},
+});
+
+/**
+ * Internal query to check organization membership.
+ * Used by action wrappers that cannot access ctx.db directly.
+ * Returns the membership record or null.
+ */
+export const checkMembership = internalQuery({
+	args: {
+		organizationId: v.id("organizations"),
+		auth0UserId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		return await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_org_and_user", (q) =>
+				q.eq("organizationId", args.organizationId).eq("auth0UserId", args.auth0UserId),
+			)
+			.unique();
 	},
 });

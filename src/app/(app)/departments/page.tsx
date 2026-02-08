@@ -66,8 +66,8 @@ export default function DepartmentsPage() {
 
 	const upsertMapping = useMutation(api.departmentMapping.upsert);
 	const removeMapping = useMutation(api.departmentMapping.remove);
-	const fetchRubicDepts = useAction(api.sync.fetchDepartmentsFromRubic);
-	const fetchTripletexDepts = useAction(api.sync.fetchDepartmentsFromTripletex);
+	const fetchRubicDepts = useAction(api.sync.fetchDepartmentsFromRubicPublic);
+	const fetchTripletexDepts = useAction(api.sync.fetchDepartmentsFromTripletexPublic);
 
 	const loadRubicDepartments = async () => {
 		if (!organizationId) return;

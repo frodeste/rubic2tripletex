@@ -1,11 +1,13 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { syncType, tripletexEnv } from "./validators";
+import { requireOrgMembership } from "./lib/auth";
 
-/** List schedules for an organization. */
+/** List schedules for an organization (requires membership). */
 export const list = query({
 	args: { organizationId: v.id("organizations") },
 	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
 		return await ctx.db
 			.query("integrationSchedules")
 			.withIndex("by_org", (q) => q.eq("organizationId", args.organizationId))
@@ -13,8 +15,8 @@ export const list = query({
 	},
 });
 
-/** Get all enabled schedules (used by the cron dispatcher). */
-export const listEnabled = query({
+/** Get all enabled schedules — internal only (used by cron dispatcher). */
+export const listEnabled = internalQuery({
 	args: {},
 	handler: async (ctx) => {
 		return await ctx.db
@@ -24,7 +26,7 @@ export const listEnabled = query({
 	},
 });
 
-/** Create or update an integration schedule. */
+/** Create or update an integration schedule (requires membership). */
 export const upsert = mutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -34,6 +36,8 @@ export const upsert = mutation({
 		isEnabled: v.boolean(),
 	},
 	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
+
 		// Find existing schedule for this org + type + env
 		const schedules = await ctx.db
 			.query("integrationSchedules")
@@ -62,8 +66,8 @@ export const upsert = mutation({
 	},
 });
 
-/** Mark a schedule as last run. */
-export const markScheduled = mutation({
+/** Mark a schedule as last run — internal only (used by scheduler). */
+export const markScheduled = internalMutation({
 	args: { scheduleId: v.id("integrationSchedules") },
 	handler: async (ctx, args) => {
 		await ctx.db.patch(args.scheduleId, {
@@ -72,8 +76,8 @@ export const markScheduled = mutation({
 	},
 });
 
-/** Mark a schedule's last completed time. */
-export const markCompleted = mutation({
+/** Mark a schedule's last completed time — internal only (used by scheduler). */
+export const markCompleted = internalMutation({
 	args: { scheduleId: v.id("integrationSchedules") },
 	handler: async (ctx, args) => {
 		await ctx.db.patch(args.scheduleId, {

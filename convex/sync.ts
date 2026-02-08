@@ -1,8 +1,8 @@
 "use node";
 
 import { v } from "convex/values";
-import { action } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import { action, internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { RubicClient } from "./lib/rubicClient";
 import { TripletexClient, type TripletexCustomer } from "./lib/tripletexClient";
 import {
@@ -26,14 +26,14 @@ async function getCredentials(
 	organizationId: any,
 	tripletexEnv: "sandbox" | "production",
 ): Promise<CredentialPair> {
-	const rubicCred = await ctx.runQuery(api.apiCredentials.getRubicCredentials, {
+	const rubicCred = await ctx.runQuery(internal.apiCredentials.getRubicCredentials, {
 		organizationId,
 	});
 	if (!rubicCred || !rubicCred.isEnabled) {
 		throw new Error("Rubic API credentials not configured or disabled for this organization");
 	}
 
-	const tripletexCred = await ctx.runQuery(api.apiCredentials.getForSync, {
+	const tripletexCred = await ctx.runQuery(internal.apiCredentials.getForSync, {
 		organizationId,
 		provider: "tripletex",
 		environment: tripletexEnv,
@@ -61,9 +61,13 @@ async function getCredentials(
 	};
 }
 
-// --- Customer Sync ---
+// =============================================================================
+// Internal implementations — called by scheduler and public wrappers
+// =============================================================================
 
-export const runCustomers = action({
+// --- Customer Sync (internal) ---
+
+export const runCustomers = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnvValidator,
@@ -73,8 +77,7 @@ export const runCustomers = action({
 		const rubicClient = new RubicClient(creds.rubic);
 		const tripletexClient = new TripletexClient(creds.tripletex);
 
-		// Start sync state
-		const syncStateId = await ctx.runMutation(api.syncState.start, {
+		const syncStateId = await ctx.runMutation(internal.syncState.start, {
 			organizationId: args.organizationId,
 			syncType: "customers",
 			tripletexEnv: args.tripletexEnv,
@@ -93,8 +96,7 @@ export const runCustomers = action({
 					const customerNo = rubicCustomer.customerNo;
 					const newHash = await computeCustomerHash(rubicCustomer);
 
-					// Check existing mapping
-					const existingMapping = await ctx.runQuery(api.customerMapping.getByRubicNo, {
+					const existingMapping = await ctx.runQuery(internal.customerMapping.getByRubicNo, {
 						organizationId: args.organizationId,
 						rubicCustomerNo: customerNo,
 						tripletexEnv: args.tripletexEnv,
@@ -108,7 +110,6 @@ export const runCustomers = action({
 							continue;
 						}
 
-						// Hash changed, update
 						tripletexCustomerId = existingMapping.tripletexCustomerId;
 						const tripletexCustomer = mapRubicCustomerToTripletex(rubicCustomer);
 
@@ -127,7 +128,6 @@ export const runCustomers = action({
 
 						await tripletexClient.updateCustomer(tripletexCustomerId, tripletexCustomer);
 					} else {
-						// No mapping -- search or create
 						const customerNumber = Number.parseInt(customerNo, 10);
 						let existingTtxCustomer: TripletexCustomer | null = null;
 
@@ -147,8 +147,7 @@ export const runCustomers = action({
 						}
 					}
 
-					// Upsert mapping
-					await ctx.runMutation(api.customerMapping.upsert, {
+					await ctx.runMutation(internal.customerMapping.upsert, {
 						organizationId: args.organizationId,
 						rubicCustomerNo: customerNo,
 						tripletexEnv: args.tripletexEnv,
@@ -166,7 +165,7 @@ export const runCustomers = action({
 				}
 			}
 
-			await ctx.runMutation(api.syncState.complete, {
+			await ctx.runMutation(internal.syncState.complete, {
 				syncStateId,
 				recordsProcessed: processed,
 				recordsFailed: failed,
@@ -174,7 +173,7 @@ export const runCustomers = action({
 
 			return { processed, failed };
 		} catch (error) {
-			await ctx.runMutation(api.syncState.fail, {
+			await ctx.runMutation(internal.syncState.fail, {
 				syncStateId,
 				errorMessage: error instanceof Error ? error.message : String(error),
 				recordsProcessed: processed,
@@ -185,9 +184,9 @@ export const runCustomers = action({
 	},
 });
 
-// --- Product Sync ---
+// --- Product Sync (internal) ---
 
-export const runProducts = action({
+export const runProducts = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnvValidator,
@@ -197,7 +196,7 @@ export const runProducts = action({
 		const rubicClient = new RubicClient(creds.rubic);
 		const tripletexClient = new TripletexClient(creds.tripletex);
 
-		const syncStateId = await ctx.runMutation(api.syncState.start, {
+		const syncStateId = await ctx.runMutation(internal.syncState.start, {
 			organizationId: args.organizationId,
 			syncType: "products",
 			tripletexEnv: args.tripletexEnv,
@@ -217,7 +216,7 @@ export const runProducts = action({
 					const productCode = rubicProduct.productCode!;
 					const hash = await computeProductHash(rubicProduct);
 
-					const existingMapping = await ctx.runQuery(api.productMapping.getByRubicCode, {
+					const existingMapping = await ctx.runQuery(internal.productMapping.getByRubicCode, {
 						organizationId: args.organizationId,
 						rubicProductCode: productCode,
 						tripletexEnv: args.tripletexEnv,
@@ -229,14 +228,13 @@ export const runProducts = action({
 							continue;
 						}
 
-						// Update product in Tripletex
 						const tripletexProduct = mapRubicProductToTripletex(rubicProduct);
 						await tripletexClient.updateProduct(existingMapping.tripletexProductId, {
 							...tripletexProduct,
 							id: existingMapping.tripletexProductId,
 						});
 
-						await ctx.runMutation(api.productMapping.upsert, {
+						await ctx.runMutation(internal.productMapping.upsert, {
 							organizationId: args.organizationId,
 							rubicProductCode: productCode,
 							tripletexEnv: args.tripletexEnv,
@@ -244,13 +242,11 @@ export const runProducts = action({
 							hash,
 						});
 					} else {
-						// Search or create in Tripletex
 						let tripletexProductId: number;
 
 						const existingTtxProduct = await tripletexClient.getProductByNumber(productCode);
 						if (existingTtxProduct?.id) {
 							tripletexProductId = existingTtxProduct.id;
-							// Update existing
 							await tripletexClient.updateProduct(tripletexProductId, {
 								...mapRubicProductToTripletex(rubicProduct),
 								id: tripletexProductId,
@@ -266,7 +262,7 @@ export const runProducts = action({
 							tripletexProductId = createResponse.value.id;
 						}
 
-						await ctx.runMutation(api.productMapping.upsert, {
+						await ctx.runMutation(internal.productMapping.upsert, {
 							organizationId: args.organizationId,
 							rubicProductCode: productCode,
 							tripletexEnv: args.tripletexEnv,
@@ -285,7 +281,7 @@ export const runProducts = action({
 				}
 			}
 
-			await ctx.runMutation(api.syncState.complete, {
+			await ctx.runMutation(internal.syncState.complete, {
 				syncStateId,
 				recordsProcessed: processed,
 				recordsFailed: failed,
@@ -293,7 +289,7 @@ export const runProducts = action({
 
 			return { processed, failed };
 		} catch (error) {
-			await ctx.runMutation(api.syncState.fail, {
+			await ctx.runMutation(internal.syncState.fail, {
 				syncStateId,
 				errorMessage: error instanceof Error ? error.message : String(error),
 				recordsProcessed: processed,
@@ -304,9 +300,9 @@ export const runProducts = action({
 	},
 });
 
-// --- Invoice Sync ---
+// --- Invoice Sync (internal) ---
 
-export const runInvoices = action({
+export const runInvoices = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnvValidator,
@@ -316,7 +312,7 @@ export const runInvoices = action({
 		const rubicClient = new RubicClient(creds.rubic);
 		const tripletexClient = new TripletexClient(creds.tripletex);
 
-		const syncStateId = await ctx.runMutation(api.syncState.start, {
+		const syncStateId = await ctx.runMutation(internal.syncState.start, {
 			organizationId: args.organizationId,
 			syncType: "invoices",
 			tripletexEnv: args.tripletexEnv,
@@ -326,8 +322,7 @@ export const runInvoices = action({
 		let failed = 0;
 
 		try {
-			// Get last sync timestamp
-			const lastSync = await ctx.runQuery(api.syncState.getLatest, {
+			const lastSync = await ctx.runQuery(internal.syncState.getLatestInternal, {
 				organizationId: args.organizationId,
 				syncType: "invoices",
 				tripletexEnv: args.tripletexEnv,
@@ -336,11 +331,9 @@ export const runInvoices = action({
 			const startPeriod = lastSync?.lastSyncAt ? new Date(lastSync.lastSyncAt) : undefined;
 			const endPeriod = new Date();
 
-			// Fetch invoices from Rubic
 			const rubicInvoices = await rubicClient.getInvoices(startPeriod, endPeriod);
 
-			// Load customer mappings
-			const customerMappings = await ctx.runQuery(api.customerMapping.list, {
+			const customerMappings = await ctx.runQuery(internal.customerMapping.listInternal, {
 				organizationId: args.organizationId,
 				tripletexEnv: args.tripletexEnv,
 				limit: 10000,
@@ -350,8 +343,7 @@ export const runInvoices = action({
 				customerMap.set(m.rubicCustomerNo, m.tripletexCustomerId);
 			}
 
-			// Load product mappings
-			const productMappings = await ctx.runQuery(api.productMapping.list, {
+			const productMappings = await ctx.runQuery(internal.productMapping.listInternal, {
 				organizationId: args.organizationId,
 				tripletexEnv: args.tripletexEnv,
 				limit: 10000,
@@ -361,8 +353,7 @@ export const runInvoices = action({
 				productMap.set(m.rubicProductCode, m.tripletexProductId);
 			}
 
-			// Load existing invoice mappings to check what's already synced
-			const existingInvoiceMappings = await ctx.runQuery(api.invoiceMapping.list, {
+			const existingInvoiceMappings = await ctx.runQuery(internal.invoiceMapping.listInternal, {
 				organizationId: args.organizationId,
 				tripletexEnv: args.tripletexEnv,
 				limit: 10000,
@@ -416,7 +407,7 @@ export const runInvoices = action({
 						throw new Error("Failed to create invoice: no ID returned");
 					}
 
-					await ctx.runMutation(api.invoiceMapping.upsert, {
+					await ctx.runMutation(internal.invoiceMapping.upsert, {
 						organizationId: args.organizationId,
 						rubicInvoiceId: invoice.invoiceID,
 						tripletexEnv: args.tripletexEnv,
@@ -434,7 +425,7 @@ export const runInvoices = action({
 				}
 			}
 
-			await ctx.runMutation(api.syncState.complete, {
+			await ctx.runMutation(internal.syncState.complete, {
 				syncStateId,
 				recordsProcessed: processed,
 				recordsFailed: failed,
@@ -442,7 +433,7 @@ export const runInvoices = action({
 
 			return { processed, failed };
 		} catch (error) {
-			await ctx.runMutation(api.syncState.fail, {
+			await ctx.runMutation(internal.syncState.fail, {
 				syncStateId,
 				errorMessage: error instanceof Error ? error.message : String(error),
 				recordsProcessed: processed,
@@ -453,9 +444,9 @@ export const runInvoices = action({
 	},
 });
 
-// --- Payment Sync ---
+// --- Payment Sync (internal) ---
 
-export const runPayments = action({
+export const runPayments = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnvValidator,
@@ -465,7 +456,7 @@ export const runPayments = action({
 		const rubicClient = new RubicClient(creds.rubic);
 		const tripletexClient = new TripletexClient(creds.tripletex);
 
-		const syncStateId = await ctx.runMutation(api.syncState.start, {
+		const syncStateId = await ctx.runMutation(internal.syncState.start, {
 			organizationId: args.organizationId,
 			syncType: "payments",
 			tripletexEnv: args.tripletexEnv,
@@ -475,8 +466,7 @@ export const runPayments = action({
 		let failed = 0;
 
 		try {
-			// Get last sync timestamp
-			const lastSync = await ctx.runQuery(api.syncState.getLatest, {
+			const lastSync = await ctx.runQuery(internal.syncState.getLatestInternal, {
 				organizationId: args.organizationId,
 				syncType: "payments",
 				tripletexEnv: args.tripletexEnv,
@@ -487,8 +477,7 @@ export const runPayments = action({
 
 			const transactions = await rubicClient.getInvoiceTransactions(startPeriod, endPeriod);
 
-			// Load invoice mappings with unsynced payments
-			const unsyncedInvoices = await ctx.runQuery(api.invoiceMapping.getUnsyncedPayments, {
+			const unsyncedInvoices = await ctx.runQuery(internal.invoiceMapping.getUnsyncedPayments, {
 				organizationId: args.organizationId,
 				tripletexEnv: args.tripletexEnv,
 			});
@@ -508,7 +497,7 @@ export const runPayments = action({
 						paymentDate: transaction.paymentDate,
 					});
 
-					await ctx.runMutation(api.invoiceMapping.markPaymentSynced, {
+					await ctx.runMutation(internal.invoiceMapping.markPaymentSynced, {
 						invoiceMappingId: mapping._id,
 					});
 
@@ -522,7 +511,7 @@ export const runPayments = action({
 				}
 			}
 
-			await ctx.runMutation(api.syncState.complete, {
+			await ctx.runMutation(internal.syncState.complete, {
 				syncStateId,
 				recordsProcessed: processed,
 				recordsFailed: failed,
@@ -530,7 +519,7 @@ export const runPayments = action({
 
 			return { processed, failed };
 		} catch (error) {
-			await ctx.runMutation(api.syncState.fail, {
+			await ctx.runMutation(internal.syncState.fail, {
 				syncStateId,
 				errorMessage: error instanceof Error ? error.message : String(error),
 				recordsProcessed: processed,
@@ -541,9 +530,9 @@ export const runPayments = action({
 	},
 });
 
-// --- Test Connection ---
+// --- Test Connection (internal) ---
 
-export const testConnection = action({
+export const testConnection = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		provider: v.union(v.literal("rubic"), v.literal("tripletex")),
@@ -551,7 +540,7 @@ export const testConnection = action({
 	},
 	handler: async (ctx, args) => {
 		if (args.provider === "rubic") {
-			const rubicCred = await ctx.runQuery(api.apiCredentials.getRubicCredentials, {
+			const rubicCred = await ctx.runQuery(internal.apiCredentials.getRubicCredentials, {
 				organizationId: args.organizationId,
 			});
 			if (!rubicCred) {
@@ -566,7 +555,7 @@ export const testConnection = action({
 					organizationId: parsed.organizationId,
 				});
 				const customers = await client.getCustomers();
-				await ctx.runMutation(api.apiCredentials.markVerified, {
+				await ctx.runMutation(internal.apiCredentials.markVerified, {
 					credentialId: rubicCred._id,
 				});
 				return { success: true, message: `Connected. Found ${customers.length} customers.` };
@@ -579,7 +568,7 @@ export const testConnection = action({
 		}
 
 		// Tripletex
-		const tripletexCred = await ctx.runQuery(api.apiCredentials.getForSync, {
+		const tripletexCred = await ctx.runQuery(internal.apiCredentials.getForSync, {
 			organizationId: args.organizationId,
 			provider: "tripletex",
 			environment: args.environment,
@@ -599,7 +588,7 @@ export const testConnection = action({
 				employeeToken: parsed.employeeToken,
 			});
 			const departments = await client.getDepartments();
-			await ctx.runMutation(api.apiCredentials.markVerified, {
+			await ctx.runMutation(internal.apiCredentials.markVerified, {
 				credentialId: tripletexCred._id,
 			});
 			return {
@@ -615,12 +604,12 @@ export const testConnection = action({
 	},
 });
 
-// --- Department Fetching ---
+// --- Department Fetching (internal) ---
 
-export const fetchDepartmentsFromRubic = action({
+export const fetchDepartmentsFromRubic = internalAction({
 	args: { organizationId: v.id("organizations") },
 	handler: async (ctx, args) => {
-		const rubicCred = await ctx.runQuery(api.apiCredentials.getRubicCredentials, {
+		const rubicCred = await ctx.runQuery(internal.apiCredentials.getRubicCredentials, {
 			organizationId: args.organizationId,
 		});
 		if (!rubicCred) throw new Error("Rubic credentials not configured");
@@ -636,13 +625,13 @@ export const fetchDepartmentsFromRubic = action({
 	},
 });
 
-export const fetchDepartmentsFromTripletex = action({
+export const fetchDepartmentsFromTripletex = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		tripletexEnv: tripletexEnvValidator,
 	},
 	handler: async (ctx, args) => {
-		const tripletexCred = await ctx.runQuery(api.apiCredentials.getForSync, {
+		const tripletexCred = await ctx.runQuery(internal.apiCredentials.getForSync, {
 			organizationId: args.organizationId,
 			provider: "tripletex",
 			environment: args.tripletexEnv,
@@ -658,5 +647,103 @@ export const fetchDepartmentsFromTripletex = action({
 
 		const result = await client.getDepartments();
 		return result.values;
+	},
+});
+
+// =============================================================================
+// Public action wrappers — callable from the client, with auth checks.
+// Delegates to the internal implementation after verifying the caller.
+// =============================================================================
+
+/**
+ * Verify the caller is authenticated and a member of the organization.
+ * Works in action context (no ctx.db) by using ctx.runQuery.
+ */
+async function requireAuthAndMembership(
+	ctx: {
+		auth: { getUserIdentity: () => Promise<any> };
+		runQuery: (q: any, args: any) => Promise<any>;
+	},
+	organizationId: any,
+) {
+	const identity = await ctx.auth.getUserIdentity();
+	if (!identity) {
+		throw new Error("Unauthenticated: you must be logged in to perform this action.");
+	}
+	const membership = await ctx.runQuery(internal.organizations.checkMembership, {
+		organizationId,
+		auth0UserId: identity.subject,
+	});
+	if (!membership) {
+		throw new Error("Forbidden: you are not a member of this organization.");
+	}
+	return { identity, membership };
+}
+
+const syncArgs = {
+	organizationId: v.id("organizations"),
+	tripletexEnv: tripletexEnvValidator,
+};
+
+export const runCustomersPublic = action({
+	args: syncArgs,
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.runCustomers, args);
+	},
+});
+
+export const runProductsPublic = action({
+	args: syncArgs,
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.runProducts, args);
+	},
+});
+
+export const runInvoicesPublic = action({
+	args: syncArgs,
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.runInvoices, args);
+	},
+});
+
+export const runPaymentsPublic = action({
+	args: syncArgs,
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.runPayments, args);
+	},
+});
+
+export const testConnectionPublic = action({
+	args: {
+		organizationId: v.id("organizations"),
+		provider: v.union(v.literal("rubic"), v.literal("tripletex")),
+		environment: tripletexEnvValidator,
+	},
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.testConnection, args);
+	},
+});
+
+export const fetchDepartmentsFromRubicPublic = action({
+	args: { organizationId: v.id("organizations") },
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.fetchDepartmentsFromRubic, args);
+	},
+});
+
+export const fetchDepartmentsFromTripletexPublic = action({
+	args: {
+		organizationId: v.id("organizations"),
+		tripletexEnv: tripletexEnvValidator,
+	},
+	handler: async (ctx, args) => {
+		await requireAuthAndMembership(ctx, args.organizationId);
+		return ctx.runAction(internal.sync.fetchDepartmentsFromTripletex, args);
 	},
 });

@@ -11,9 +11,10 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 	const { user, isLoading: userLoading } = useUser();
 	const [selectedOrgId, setSelectedOrgId] = useState<Id<"organizations"> | null>(null);
 
-	const auth0UserId = user?.sub ?? "";
+	const isAuthenticated = !!user?.sub;
+	// listForUser uses auth identity server-side — no args needed
 
-	const orgs = useQuery(api.organizations.listForUser, auth0UserId ? { auth0UserId } : "skip");
+	const orgs = useQuery(api.organizations.listForUser, isAuthenticated ? {} : "skip");
 
 	const isLoading = userLoading || orgs === undefined;
 

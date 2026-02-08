@@ -1,14 +1,17 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { syncStatus, syncType, tripletexEnv } from "./validators";
+import { internalMutation, internalQuery, query } from "./_generated/server";
+import { syncType, tripletexEnv } from "./validators";
+import { requireOrgMembership } from "./lib/auth";
 
-/** List recent sync runs for an organization. */
+/** List recent sync runs for an organization (requires membership). */
 export const list = query({
 	args: {
 		organizationId: v.id("organizations"),
 		limit: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
+
 		const limit = args.limit ?? 50;
 		return await ctx.db
 			.query("syncState")
@@ -18,8 +21,45 @@ export const list = query({
 	},
 });
 
-/** Get the latest sync run for a specific type and environment. */
+/** Get the latest sync run for a specific type and environment (requires membership). */
 export const getLatest = query({
+	args: {
+		organizationId: v.id("organizations"),
+		syncType: syncType,
+		tripletexEnv: tripletexEnv,
+	},
+	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
+
+		return await ctx.db
+			.query("syncState")
+			.withIndex("by_org_type_env", (q) =>
+				q
+					.eq("organizationId", args.organizationId)
+					.eq("syncType", args.syncType)
+					.eq("tripletexEnv", args.tripletexEnv),
+			)
+			.order("desc")
+			.first();
+	},
+});
+
+/** Get currently running syncs for an org (requires membership). */
+export const getRunning = query({
+	args: { organizationId: v.id("organizations") },
+	handler: async (ctx, args) => {
+		await requireOrgMembership(ctx, args.organizationId);
+
+		const all = await ctx.db
+			.query("syncState")
+			.withIndex("by_org", (q) => q.eq("organizationId", args.organizationId))
+			.collect();
+		return all.filter((s) => s.status === "running");
+	},
+});
+
+/** Get the latest sync run — internal only (used by sync actions). */
+export const getLatestInternal = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
 		syncType: syncType,
@@ -39,20 +79,8 @@ export const getLatest = query({
 	},
 });
 
-/** Get currently running syncs for an org. */
-export const getRunning = query({
-	args: { organizationId: v.id("organizations") },
-	handler: async (ctx, args) => {
-		const all = await ctx.db
-			.query("syncState")
-			.withIndex("by_org", (q) => q.eq("organizationId", args.organizationId))
-			.collect();
-		return all.filter((s) => s.status === "running");
-	},
-});
-
-/** Start a new sync run. */
-export const start = mutation({
+/** Start a new sync run — internal only (used by sync actions). */
+export const start = internalMutation({
 	args: {
 		organizationId: v.id("organizations"),
 		syncType: syncType,
@@ -71,8 +99,8 @@ export const start = mutation({
 	},
 });
 
-/** Mark a sync run as completed successfully. */
-export const complete = mutation({
+/** Mark a sync run as completed successfully — internal only. */
+export const complete = internalMutation({
 	args: {
 		syncStateId: v.id("syncState"),
 		recordsProcessed: v.number(),
@@ -90,8 +118,8 @@ export const complete = mutation({
 	},
 });
 
-/** Mark a sync run as failed. */
-export const fail = mutation({
+/** Mark a sync run as failed — internal only. */
+export const fail = internalMutation({
 	args: {
 		syncStateId: v.id("syncState"),
 		errorMessage: v.string(),

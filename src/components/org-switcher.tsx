@@ -38,8 +38,8 @@ export function OrgSwitcher() {
 	const { user } = useUser();
 	const { organizationId, organizationName, setOrganizationId } = useOrganization();
 
-	const auth0UserId = user?.sub ?? "";
-	const orgs = useQuery(api.organizations.listForUser, auth0UserId ? { auth0UserId } : "skip");
+	const isAuthenticated = !!user?.sub;
+	const orgs = useQuery(api.organizations.listForUser, isAuthenticated ? {} : "skip");
 	const createOrg = useMutation(api.organizations.create);
 
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -49,7 +49,7 @@ export function OrgSwitcher() {
 
 	async function handleCreateOrg() {
 		const trimmedName = newOrgName.trim();
-		if (!trimmedName || !auth0UserId) return;
+		if (!trimmedName) return;
 
 		const slug = slugify(trimmedName);
 		if (!slug) {
@@ -64,7 +64,6 @@ export function OrgSwitcher() {
 				name: trimmedName,
 				slug,
 				auth0OrgId: `org_${slug}_${Date.now()}`,
-				creatorAuth0UserId: auth0UserId,
 			});
 			setOrganizationId(orgId);
 			setDialogOpen(false);

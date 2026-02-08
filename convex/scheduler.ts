@@ -1,7 +1,7 @@
 "use node";
 
 import { internalAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 
 /**
  * Parses a simple cron expression and checks if it should run now.
@@ -42,7 +42,7 @@ function parseCronIntervalMs(cronExpression: string): number | null {
 export const checkAndDispatch = internalAction({
 	args: {},
 	handler: async (ctx) => {
-		const schedules = await ctx.runQuery(api.integrationSchedules.listEnabled, {});
+		const schedules = await ctx.runQuery(internal.integrationSchedules.listEnabled, {});
 		const now = Date.now();
 
 		for (const schedule of schedules) {
@@ -55,17 +55,17 @@ export const checkAndDispatch = internalAction({
 			if (elapsed < intervalMs) continue;
 
 			// Mark as scheduled
-			await ctx.runMutation(api.integrationSchedules.markScheduled, {
+			await ctx.runMutation(internal.integrationSchedules.markScheduled, {
 				scheduleId: schedule._id,
 			});
 
 			// Dispatch the sync action
 			const syncType = schedule.syncType;
 			const actionMap: Record<string, any> = {
-				customers: api.sync.runCustomers,
-				products: api.sync.runProducts,
-				invoices: api.sync.runInvoices,
-				payments: api.sync.runPayments,
+				customers: internal.sync.runCustomers,
+				products: internal.sync.runProducts,
+				invoices: internal.sync.runInvoices,
+				payments: internal.sync.runPayments,
 			};
 
 			const syncAction = actionMap[syncType];
@@ -76,7 +76,7 @@ export const checkAndDispatch = internalAction({
 						tripletexEnv: schedule.tripletexEnv,
 					});
 
-					await ctx.runMutation(api.integrationSchedules.markCompleted, {
+					await ctx.runMutation(internal.integrationSchedules.markCompleted, {
 						scheduleId: schedule._id,
 					});
 				} catch (error) {
