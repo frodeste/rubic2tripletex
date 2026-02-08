@@ -3,6 +3,7 @@
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowRight, Loader2, Network, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,6 +78,9 @@ export default function DepartmentsPage() {
 			setRubicDepts(depts as RubicDept[]);
 		} catch (error) {
 			console.error("Failed to fetch Rubic departments:", error);
+			toast.error("Failed to fetch Rubic departments", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setLoadingRubic(false);
 		}
@@ -93,6 +97,9 @@ export default function DepartmentsPage() {
 			setTripletexDepts(depts as TripletexDept[]);
 		} catch (error) {
 			console.error("Failed to fetch Tripletex departments:", error);
+			toast.error("Failed to fetch Tripletex departments", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setLoadingTripletex(false);
 		}

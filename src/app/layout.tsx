@@ -1,6 +1,7 @@
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "@/components/ui/sonner";
 import { ConvexClientProvider } from "./convex-client-provider";
 import { OrganizationProvider } from "./organization-provider";
 import "./globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 							<OrganizationProvider>{children}</OrganizationProvider>
 						</ConvexClientProvider>
 					</Auth0Provider>
+					<Toaster richColors closeButton />
 				</ThemeProvider>
 			</body>
 		</html>

@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -269,6 +270,9 @@ export default function IntegrationDetailPage() {
 			await runSync({ organizationId, tripletexEnv: env });
 		} catch (error) {
 			console.error(`Sync ${type} failed:`, error);
+			toast.error(`${type} sync failed`, {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setIsRunning(false);
 		}

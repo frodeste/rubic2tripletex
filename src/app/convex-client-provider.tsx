@@ -21,8 +21,10 @@ function useAuthFromAuth0() {
 	const fetchAccessToken = useCallback(
 		async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
 			try {
+				// Always bypass cache for token requests — ID tokens expire and
+				// returning a stale cached token causes "Unauthenticated" errors.
 				const response = await fetch("/api/convex-token", {
-					cache: forceRefreshToken ? "no-cache" : "default",
+					cache: forceRefreshToken ? "reload" : "no-store",
 				});
 				if (!response.ok) return null;
 				const data = await response.json();

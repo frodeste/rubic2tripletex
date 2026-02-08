@@ -15,6 +15,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,6 +133,9 @@ function QuickSyncButton({
 			await runSync({ organizationId, tripletexEnv });
 		} catch (error) {
 			console.error(`Sync ${syncType} failed:`, error);
+			toast.error(`${syncType} sync failed`, {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setIsRunning(false);
 		}

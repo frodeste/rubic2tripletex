@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,6 +192,9 @@ function RunSyncButton({ syncType }: { syncType: SyncType }) {
 			await runSync({ organizationId, tripletexEnv: env });
 		} catch (error) {
 			console.error(`Sync ${syncType} failed:`, error);
+			toast.error(`${syncType} sync failed`, {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setIsRunning(false);
 		}

@@ -13,7 +13,7 @@ Both **sandbox** and **production** Tripletex environments are supported with in
 
 ## Tech Stack
 
-Next.js 16 (App Router) · TypeScript · Node.js 24 · Bun · Vercel · Neon Postgres · Drizzle ORM · Auth0 · Sentry · Biome.js
+Next.js 16 (App Router) · TypeScript · Node.js 24 · Bun · Convex · Auth0 · Vercel · Sentry · Biome.js
 
 ## Quick Start
 
@@ -36,18 +36,51 @@ bun run dev                   # http://localhost:3000
 
 | Command | Description |
 | ------------------- | -------------------------------- |
-| `bun run dev` | Start dev server |
+| `bun run dev` | Start Next.js + Convex dev servers |
 | `bun run build` | Production build |
 | `bun run check` | Lint + format (Biome) |
 | `bun test` | Run tests |
-| `bun run db:generate` | Generate Drizzle migration |
-| `bun run db:migrate` | Apply migrations |
-| `bun run db:studio` | Open Drizzle Studio |
+| `npx convex dev` | Start Convex dev server (standalone) |
+| `npx convex dashboard` | Open Convex dashboard |
+
+## Auth0 M2M Setup (Profile Sync)
+
+When a user updates their name on the profile page, the app syncs the change back to Auth0 via the Management API. This requires a **Machine-to-Machine (M2M) application** in Auth0.
+
+### 1. Create an M2M application
+
+1. Go to **Auth0 Dashboard > Applications > Applications > Create Application**
+2. Choose **Machine to Machine Applications**
+3. Name it something like `Rubic2Tripletex M2M`
+4. Authorize it for the **Auth0 Management API** (`https://<your-tenant>.eu.auth0.com/api/v2/`)
+5. Grant the `update:users` permission (scope)
+
+### 2. Set Convex environment variables
+
+Add the M2M credentials to your Convex deployment:
+
+```bash
+npx convex env set AUTH0_M2M_CLIENT_ID  <client-id-from-step-1>
+npx convex env set AUTH0_M2M_CLIENT_SECRET <client-secret-from-step-1>
+```
+
+`AUTH0_DOMAIN` should already be set (e.g. `https://your-tenant.eu.auth0.com`).
+
+| Variable | Description |
+| --- | --- |
+| `AUTH0_DOMAIN` | Auth0 tenant URL (already configured for auth) |
+| `AUTH0_M2M_CLIENT_ID` | Client ID of the M2M application |
+| `AUTH0_M2M_CLIENT_SECRET` | Client secret of the M2M application |
+
+> **Note:** Without these credentials the profile page still works — Convex is updated as usual, but the Auth0 sync is silently skipped. A warning is logged to the Convex dashboard.
+
+See [docs/auth0-post-login-action.md](docs/auth0-post-login-action.md) for the complementary Auth0 Post-Login Action setup.
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — system design, data flow, database schema, API routes
-- [Development](docs/development.md) — setup, environment variables, testing, migrations
+- [Architecture](docs/architecture.md) — system design, data flow, database schema
+- [Development](docs/development.md) — setup, environment variables, testing, deployment
+- [Auth0 Post-Login Action](docs/auth0-post-login-action.md) — provisioning users in Convex on login
 
 ## Commit Conventions
 

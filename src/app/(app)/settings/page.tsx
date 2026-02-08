@@ -12,7 +12,9 @@ import {
 	Trash2,
 	Users,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,7 +80,13 @@ function RubicCredentialForm() {
 				}),
 				isEnabled: enabled,
 			});
+			toast.success("Rubic credentials saved");
 			setOpen(false);
+		} catch (error) {
+			console.error("Failed to save Rubic credentials:", error);
+			toast.error("Failed to save Rubic credentials", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setSaving(false);
 		}
@@ -96,9 +104,13 @@ function RubicCredentialForm() {
 			});
 			setTestResult(result);
 		} catch (error) {
+			console.error("Rubic connection test failed:", error);
 			setTestResult({
 				success: false,
 				error: error instanceof Error ? error.message : String(error),
+			});
+			toast.error("Rubic connection test failed", {
+				description: error instanceof Error ? error.message : String(error),
 			});
 		} finally {
 			setTesting(false);
@@ -221,7 +233,13 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 				credentials: JSON.stringify({ consumerToken, employeeToken }),
 				isEnabled: enabled,
 			});
+			toast.success(`Tripletex ${env} credentials saved`);
 			setOpen(false);
+		} catch (error) {
+			console.error("Failed to save Tripletex credentials:", error);
+			toast.error("Failed to save Tripletex credentials", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		} finally {
 			setSaving(false);
 		}
@@ -239,9 +257,13 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 			});
 			setTestResult(result);
 		} catch (error) {
+			console.error("Tripletex connection test failed:", error);
 			setTestResult({
 				success: false,
 				error: error instanceof Error ? error.message : String(error),
+			});
+			toast.error("Tripletex connection test failed", {
+				description: error instanceof Error ? error.message : String(error),
 			});
 		} finally {
 			setTesting(false);
@@ -466,28 +488,40 @@ export default function SettingsPage() {
 				<TabsContent value="members" className="mt-4">
 					<Card>
 						<CardHeader>
-							<CardTitle className="text-lg">Organization Members</CardTitle>
-							<CardDescription>Manage who has access to {organizationName}</CardDescription>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="text-lg">Organization Members</CardTitle>
+									<CardDescription>Manage who has access to {organizationName}</CardDescription>
+								</div>
+								<Button variant="outline" size="sm" render={<Link href="/settings/organization" />}>
+									Manage Organization
+								</Button>
+							</div>
 						</CardHeader>
 						<CardContent>
 							{members && members.length > 0 ? (
 								<div className="space-y-3">
-									{members.map((member) => (
-										<div
-											key={member._id}
-											className="flex items-center justify-between rounded-lg border p-4"
-										>
-											<div>
-												<span className="font-mono text-sm">{member.auth0UserId}</span>
-												<p className="text-xs text-muted-foreground">
-													Joined {new Date(member.joinedAt).toLocaleDateString()}
-												</p>
+									{members.map((member) => {
+										if (!member) return null;
+										return (
+											<div
+												key={member._id}
+												className="flex items-center justify-between rounded-lg border p-4"
+											>
+												<div>
+													<span className="font-mono text-sm">
+														{member.user?.name ?? member.user?.email ?? "Unknown user"}
+													</span>
+													<p className="text-xs text-muted-foreground">
+														Joined {new Date(member.joinedAt).toLocaleDateString()}
+													</p>
+												</div>
+												<Badge variant={member.role === "admin" ? "default" : "secondary"}>
+													{member.role}
+												</Badge>
 											</div>
-											<Badge variant={member.role === "admin" ? "default" : "secondary"}>
-												{member.role}
-											</Badge>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							) : (
 								<div className="py-8 text-center text-muted-foreground">No members found</div>

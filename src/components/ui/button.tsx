@@ -42,6 +42,9 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
 		<ButtonPrimitive
 			data-slot="button"
 			className={cn(buttonVariants({ variant, size }), className)}
+			// When render is used with a non-button element (e.g. <Link>, <a>),
+			// tell Base UI not to expect a native <button>.
+			nativeButton={!props.render}
 			{...props}
 		/>
 	);
