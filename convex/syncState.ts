@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
-import { syncType, tripletexEnv } from "./validators";
 import { requireOrgMembership } from "./lib/auth";
+import { syncType, tripletexEnv } from "./validators";
 
 /** List recent sync runs for an organization (requires membership). */
 export const list = query({

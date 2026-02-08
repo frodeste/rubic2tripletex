@@ -2,74 +2,181 @@
 
 ## Overview
 
-Rubic2Tripletex is a one-way sync service: **Rubic → Tripletex**. It runs as a Next.js app on Vercel with Neon Postgres for state tracking.
+Rubic2Tripletex is a multi-tenant SaaS integration platform: **Rubic → Tripletex**. It runs as a Next.js app with [Convex](https://convex.dev) as the serverless backend (database, functions, scheduling) and [Auth0](https://auth0.com) for authentication.
 
 ```mermaid
 graph LR
-    Rubic["Rubic API"] -->|Read| App["Rubic2Tripletex<br/>(Vercel)"]
-    App -->|Write| TTX["Tripletex API<br/>(sandbox + prod)"]
-    App -->|State| DB["Neon Postgres"]
-    Auth0["Auth0"] -->|Protect| App
-    Cron["Vercel Cron"] -->|Trigger| App
+    User["Browser"] -->|Auth0 Login| Auth0["Auth0"]
+    Auth0 -->|ID Token| App["Next.js App<br/>(Vercel)"]
+    App -->|Queries & Mutations| Convex["Convex<br/>(Backend)"]
+    Convex -->|Read| Rubic["Rubic API"]
+    Convex -->|Write| TTX["Tripletex API<br/>(sandbox + prod)"]
+    Auth0 -->|Post-Login Action| Convex
+    Convex -->|Scheduled Jobs| Convex
 ```
+
+## Source of Truth Boundaries
+
+| Domain | Owner | Details |
+| --- | --- | --- |
+| **Authentication** | Auth0 | Credentials, SSO/MFA, login/logout, ID tokens |
+| **Identity facts** | Auth0 (read-only) | `sub`, `email`, `name`, `picture` — synced to Convex on login |
+| **Organizations** | Convex | Name, slug, settings, creation, deletion |
+| **Memberships & Roles** | Convex | `owner`, `admin`, `member` roles per org |
+| **Invitations** | Convex | Invite lifecycle: create, accept, revoke, expire |
+| **User app data** | Convex | Preferences, `lastActiveAt`, feature flags, audit trails |
+| **Business data** | Convex | API credentials, sync state, mappings, schedules |
+
+**Rule:** Auth0 is never written to for application data. Convex is the single source of truth for everything except authentication credentials.
+
+## Authentication Flow
+
+```
+1. User visits app
+2. Auth0 login (redirect or universal login)
+3. Auth0 Post-Login Action fires → calls Convex HTTP Action to upsert user record
+4. Auth0 returns ID token to client
+5. ConvexProviderWithAuth fetches token via /api/convex-token
+6. Convex verifies JWT against Auth0 issuer (convex/auth.config.ts)
+7. useStoreUserEffect calls api.users.store (idempotent JIT provisioning)
+8. App loads with authenticated Convex context
+```
+
+See [Auth0 Post-Login Action Guide](./auth0-post-login-action.md) for server-side provisioning setup.
+
+## Data Access Layer (DAL)
+
+All Convex functions enforce authorization through a layered approach:
+
+1. **`authenticatedQuery` / `authenticatedMutation`** (from `convex/functions.ts` via `convex-helpers`)
+   - Verifies the caller has a valid JWT
+   - Looks up the Convex `users` record by `tokenIdentifier`
+   - Injects `ctx.user` and `ctx.identity` into every handler
+   - Throws if unauthenticated or user record missing
+
+2. **`requireOrgMembership(ctx, orgId)`** (from `convex/lib/auth.ts`)
+   - Checks the `memberships` table for the caller + org
+   - Returns `{ identity, user, membership }` on success
+   - Throws `Forbidden` if not a member
+
+3. **`requireOrgAdmin(ctx, orgId)`** (from `convex/lib/auth.ts`)
+   - Same as above, but also checks `role === "admin" || role === "owner"`
+
+Every business-data function (API credentials, sync state, mappings) uses these guards. There is no unauthenticated access to tenant data.
+
+## Multi-Tenancy Model
+
+```
+organizations
+    ├── memberships (userId + role)
+    ├── apiCredentials (per provider, per environment)
+    ├── integrationSchedules (cron-based)
+    ├── syncState (run history)
+    ├── customerMapping
+    ├── productMapping
+    ├── invoiceMapping
+    └── departmentMapping
+```
+
+Each tenant's data is scoped by `organizationId`. All queries filter by the selected org, and authorization is checked on every request.
 
 ## Sync Flow
 
-Each sync type follows the same pattern:
+Each sync type follows the same pattern, executed as Convex actions:
 
-1. Fetch entities from Rubic API (paginated)
-2. Map to Tripletex format
-3. Compare against stored hashes/mappings to detect changes
-4. Create or update in Tripletex
-5. Record mapping and sync state in database
+1. Load API credentials for the org + provider + environment from Convex
+2. Fetch entities from Rubic API (paginated)
+3. Map to Tripletex format (using mappers in `src/mappers/`)
+4. Compare against stored hashes/mappings to detect changes
+5. Create or update in Tripletex
+6. Record mapping and sync state in Convex
 
-Both sandbox and production Tripletex environments run independently with separate credentials, mappings, and sync state.
+Both sandbox and production Tripletex environments run independently with separate credentials, mappings, and sync state per organization.
 
-## API Routes
+## Convex Schema
 
-| Route | Method | Auth | Purpose |
-| --------------------------------- | ------ | ----------- | -------------------------------- |
-| `/api/cron/sync-{type}` | GET | CRON_SECRET | Automated sync (4 types) |
-| `/api/trigger/{syncType}` | POST | Auth0 | Manual sync from dashboard |
-| `/api/health` | GET | None | Health check and sync status |
-| `/auth/login` | GET | None | Auth0 login |
-| `/auth/logout` | GET | Auth0 | Auth0 logout |
+Key tables (see `convex/schema.ts` for full definitions):
 
-## Database Schema
-
-Four tables in Neon Postgres via Drizzle ORM:
-
-- **sync_state** — Tracks each sync run (type, environment, status, timestamps, record counts, errors)
-- **customer_mapping** — Maps Rubic `customerNo` → Tripletex `customerId` with SHA-256 hash, per environment
-- **product_mapping** — Maps Rubic `productCode` → Tripletex `productId` with SHA-256 hash, per environment
-- **invoice_mapping** — Maps Rubic `invoiceId` → Tripletex `invoiceId` with payment sync status, per environment
-
-All mapping tables use composite primary keys of `(rubic_id, tripletex_env)`.
+| Table | Purpose |
+| --- | --- |
+| `users` | JIT-provisioned from Auth0, keyed by `tokenIdentifier` |
+| `organizations` | Tenant entities with name, slug, optional `auth0OrgId` |
+| `memberships` | User-org relationships with `owner`/`admin`/`member` roles |
+| `invitations` | Invitation lifecycle (pending → accepted/expired/revoked) |
+| `apiCredentials` | Per-org, per-provider, per-environment API keys |
+| `integrationSchedules` | Cron-based sync schedules per org |
+| `syncState` | Run history (status, record counts, errors) |
+| `customerMapping` | Rubic `customerNo` → Tripletex `customerId` |
+| `productMapping` | Rubic `productCode` → Tripletex `productId` |
+| `invoiceMapping` | Rubic `invoiceId` → Tripletex `invoiceId` |
+| `departmentMapping` | Rubic → Tripletex department mapping |
 
 ## Project Structure
 
 ```
-app/                              # Next.js App Router
-  api/
-    auth/[...auth0]/route.ts      # Auth0 handlers
-    cron/sync-{type}/route.ts     # Vercel cron endpoints (4 sync types)
-    trigger/[syncType]/route.ts   # Manual trigger (auth-protected)
-    health/route.ts               # Health check
-  page.tsx                        # Dashboard (sync status + triggers)
+convex/                              # Convex backend
+  schema.ts                          # Database schema (all tables)
+  auth.config.ts                     # Auth0 JWT verification config
+  functions.ts                       # authenticatedQuery/Mutation builders
+  users.ts                           # User CRUD + JIT provisioning
+  organizations.ts                   # Org CRUD + membership management
+  invitations.ts                     # Invitation lifecycle
+  apiCredentials.ts                  # Per-org API credential management
+  integrationSchedules.ts            # Cron schedule management
+  sync.ts                            # Sync orchestration
+  syncState.ts                       # Sync run tracking
+  customerMapping.ts                 # Customer mapping CRUD
+  productMapping.ts                  # Product mapping CRUD
+  invoiceMapping.ts                  # Invoice mapping CRUD
+  departmentMapping.ts               # Department mapping CRUD
+  scheduler.ts                       # Convex cron scheduler
+  crons.ts                           # Cron job definitions
+  validators.ts                      # Shared Convex validators
+  lib/
+    auth.ts                          # Auth helpers (requireOrgMembership, etc.)
+    mappers.ts                       # Server-side entity mappers
+    rubicClient.ts                   # Rubic API client (server-side)
+    tripletexClient.ts               # Tripletex API client (server-side)
+    urlValidation.ts                 # SSRF protection for URLs
+
 src/
-  clients/                        # Rubic + Tripletex API clients
-  sync/                           # Sync orchestration (per entity type)
-  mappers/                        # Rubic → Tripletex entity mapping
-  db/                             # Drizzle schema, client, migrations
-  types/                          # Rubic + Tripletex TypeScript types
-  config.ts                       # Zod-validated environment config
-  logger.ts                       # Structured logger (+ Sentry integration)
+  app/
+    (app)/                           # Authenticated app routes
+      dashboard/page.tsx             # Sync status dashboard
+      departments/page.tsx           # Department mapping
+      integrations/page.tsx          # Integration management
+      settings/page.tsx              # Org settings
+      settings/organization/page.tsx # Organization profile
+      profile/page.tsx               # User profile
+      layout.tsx                     # App shell with sidebar
+    api/
+      convex-token/route.ts          # Auth0 ID token endpoint for Convex
+      health/route.ts                # Health check
+    convex-client-provider.tsx       # ConvexProviderWithAuth setup
+    organization-provider.tsx        # Org context + JIT user provisioning
+    login/page.tsx                   # Login page
+    layout.tsx                       # Root layout (Auth0 + Convex providers)
+  components/
+    org-switcher.tsx                 # Organization switcher (Popover + Command)
+    app-sidebar.tsx                  # Navigation sidebar
+    ui/                              # shadcn/ui components
+  hooks/
+    use-organization.ts              # Org context hook + types
+  clients/                           # API clients (used by mappers/tests)
+  mappers/                           # Rubic → Tripletex entity mappers
+  types/                             # Rubic + Tripletex TypeScript types
+
+docs/
+  architecture.md                    # This file
+  development.md                     # Development setup guide
+  auth0-post-login-action.md         # Auth0 Post-Login Action setup guide
 ```
 
 ## Error Handling
 
 - Each sync runs independently — one failure doesn't block others
 - Failed individual records are logged but don't stop the batch
-- `sync_state` tracks status per run for dashboard visibility
-- Sentry captures exceptions and warnings automatically via the logger
-- Structured JSON logging for Vercel's log viewer
+- `syncState` tracks status per run for dashboard visibility
+- Sentry captures exceptions and warnings automatically
+- Structured JSON logging for observability
+- Convex function errors surface in the Convex dashboard logs

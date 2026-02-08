@@ -17,14 +17,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { api } from "../../../../convex/_generated/api";
-import { useOrganization } from "@/hooks/use-organization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
 	Dialog,
 	DialogContent,
@@ -34,6 +29,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -42,6 +39,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useOrganization } from "@/hooks/use-organization";
+import { api } from "../../../../convex/_generated/api";
 
 const syncTypes = [
 	{

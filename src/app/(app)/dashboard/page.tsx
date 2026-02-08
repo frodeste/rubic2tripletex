@@ -6,18 +6,15 @@ import {
 	ArrowLeftRight,
 	CheckCircle2,
 	Clock,
+	CreditCard,
+	FileText,
 	Loader2,
+	Package,
 	Play,
 	Users,
 	XCircle,
-	Package,
-	FileText,
-	CreditCard,
 } from "lucide-react";
 import { useState } from "react";
-import { api } from "../../../../convex/_generated/api";
-import type { Doc } from "../../../../convex/_generated/dataModel";
-import { useOrganization } from "@/hooks/use-organization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +26,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useOrganization } from "@/hooks/use-organization";
+import { api } from "../../../../convex/_generated/api";
+import type { Doc } from "../../../../convex/_generated/dataModel";
 
 const syncTypeConfig = {
 	customers: { label: "Customers", icon: Users, color: "bg-blue-500" },

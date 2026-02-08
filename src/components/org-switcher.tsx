@@ -2,19 +2,9 @@
 
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
 import { Building2, ChevronsUpDown, Plus } from "lucide-react";
-import { api } from "../../convex/_generated/api";
-import { useOrganization } from "@/hooks/use-organization";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuPositioner,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { SidebarMenuButton } from "@/components/ui/sidebar";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -23,9 +13,19 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuPositioner,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
+import { useOrganization } from "@/hooks/use-organization";
+import { api } from "../../convex/_generated/api";
 
 function slugify(name: string): string {
 	return name
@@ -63,7 +63,6 @@ export function OrgSwitcher() {
 			const orgId = await createOrg({
 				name: trimmedName,
 				slug,
-				auth0OrgId: `org_${slug}_${Date.now()}`,
 			});
 			setOrganizationId(orgId);
 			setDialogOpen(false);

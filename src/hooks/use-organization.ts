@@ -4,15 +4,17 @@ import { createContext, useContext } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 
 export interface OrganizationContextValue {
+	userId: Id<"users"> | null;
 	organizationId: Id<"organizations"> | null;
 	organizationName: string | null;
 	auth0OrgId: string | null;
-	role: "admin" | "member" | null;
+	role: "owner" | "admin" | "member" | null;
 	setOrganizationId: (id: Id<"organizations">) => void;
 	isLoading: boolean;
 }
 
 export const OrganizationContext = createContext<OrganizationContextValue>({
+	userId: null,
 	organizationId: null,
 	organizationName: null,
 	auth0OrgId: null,

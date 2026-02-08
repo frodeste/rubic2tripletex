@@ -15,8 +15,6 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { api } from "../../../../../convex/_generated/api";
-import { useOrganization } from "@/hooks/use-organization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +35,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrganization } from "@/hooks/use-organization";
+import { api } from "../../../../../convex/_generated/api";
 
 const typeConfig = {
 	customers: { label: "Customers", icon: Users },
