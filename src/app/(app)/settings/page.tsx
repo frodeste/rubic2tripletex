@@ -61,8 +61,11 @@ function RubicCredentialForm() {
 	const upsertCredentials = useMutation(api.apiCredentials.upsert);
 	const testConnection = useAction(api.sync.testConnectionPublic);
 
+	const parsedOrgId = Number.parseInt(organizationIdField, 10);
+	const isOrgIdValid = organizationIdField.trim() !== "" && !Number.isNaN(parsedOrgId);
+
 	const handleSave = async () => {
-		if (!organizationId) return;
+		if (!organizationId || !isOrgIdValid) return;
 		setSaving(true);
 		try {
 			await upsertCredentials({
@@ -72,7 +75,7 @@ function RubicCredentialForm() {
 				baseUrl,
 				credentials: JSON.stringify({
 					apiKey,
-					organizationId: Number.parseInt(organizationIdField, 10),
+					organizationId: parsedOrgId,
 				}),
 				isEnabled: enabled,
 			});
@@ -134,7 +137,11 @@ function RubicCredentialForm() {
 							value={organizationIdField}
 							onChange={(e) => setOrganizationIdField(e.target.value)}
 							placeholder="e.g. 12345"
+							inputMode="numeric"
 						/>
+						{organizationIdField.trim() !== "" && !isOrgIdValid && (
+							<p className="text-sm text-destructive">Must be a valid integer.</p>
+						)}
 					</div>
 					<div className="flex items-center justify-between">
 						<Label>Enabled</Label>
@@ -156,7 +163,7 @@ function RubicCredentialForm() {
 					<Button
 						variant="outline"
 						onClick={handleTest}
-						disabled={testing || !apiKey || !organizationIdField}
+						disabled={testing || !apiKey || !isOrgIdValid}
 						className="gap-2"
 					>
 						{testing ? (
@@ -166,7 +173,7 @@ function RubicCredentialForm() {
 						)}
 						Test Connection
 					</Button>
-					<Button onClick={handleSave} disabled={saving} className="gap-2">
+					<Button onClick={handleSave} disabled={saving || !isOrgIdValid || !apiKey} className="gap-2">
 						{saving && <Loader2 className="h-4 w-4 animate-spin" />}
 						Save
 					</Button>
