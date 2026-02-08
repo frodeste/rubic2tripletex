@@ -1,4 +1,4 @@
-import { auth0 } from "./src/auth0";
+import { auth0 } from "./auth0";
 
 export async function proxy(request: Request) {
 	return await auth0.middleware(request);
