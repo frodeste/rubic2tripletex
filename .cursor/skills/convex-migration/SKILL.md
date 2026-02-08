@@ -39,25 +39,7 @@ The current Drizzle schema in `src/db/schema.ts` maps to Convex like this:
 ```typescript
 // convex/schema.ts
 import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
-
-const syncType = v.union(
-	v.literal("customers"),
-	v.literal("products"),
-	v.literal("invoices"),
-	v.literal("payments"),
-);
-
-const syncStatus = v.union(
-	v.literal("running"),
-	v.literal("success"),
-	v.literal("failed"),
-);
-
-const tripletexEnv = v.union(
-	v.literal("sandbox"),
-	v.literal("production"),
-);
+import { syncType, syncStatus, tripletexEnv } from "./validators";
 
 export default defineSchema({
 	syncState: defineTable({
@@ -122,17 +104,42 @@ export default defineSchema({
 
 ### Function Patterns
 
-Convex replaces raw SQL / Drizzle queries with typed functions.
+Convex replaces raw SQL / Drizzle queries with typed functions. Extract shared validators into a `convex/validators.ts` file so they can be reused across schema and functions:
+
+```typescript
+// convex/validators.ts
+import { v } from "convex/values";
+
+export const syncType = v.union(
+	v.literal("customers"),
+	v.literal("products"),
+	v.literal("invoices"),
+	v.literal("payments"),
+);
+
+export const syncStatus = v.union(
+	v.literal("running"),
+	v.literal("success"),
+	v.literal("failed"),
+);
+
+export const tripletexEnv = v.union(
+	v.literal("sandbox"),
+	v.literal("production"),
+);
+```
+
+Use these validators in function args for consistent type safety (not `v.string()`):
 
 **Query (read data):**
 
 ```typescript
 // convex/syncState.ts
 import { query } from "./_generated/server";
-import { v } from "convex/values";
+import { syncType, tripletexEnv } from "./validators";
 
 export const getLatest = query({
-	args: { syncType: v.string(), tripletexEnv: v.string() },
+	args: { syncType, tripletexEnv },
 	handler: async (ctx, args) => {
 		return await ctx.db
 			.query("syncState")
@@ -150,10 +157,10 @@ export const getLatest = query({
 ```typescript
 // convex/syncState.ts
 import { mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { syncType, tripletexEnv } from "./validators";
 
 export const startSync = mutation({
-	args: { syncType: v.string(), tripletexEnv: v.string() },
+	args: { syncType, tripletexEnv },
 	handler: async (ctx, args) => {
 		return await ctx.db.insert("syncState", {
 			syncType: args.syncType,
@@ -175,9 +182,10 @@ Sync logic that calls Rubic/Tripletex APIs should use actions, since they can ca
 // convex/sync.ts
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { tripletexEnv } from "./validators";
 
 export const syncCustomers = action({
-	args: { tripletexEnv: v.string() },
+	args: { tripletexEnv },
 	handler: async (ctx, args) => {
 		// Call external APIs
 		const customers = await fetchFromRubic();
