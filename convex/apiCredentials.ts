@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { providerType, tripletexEnv } from "./validators";
 import { requireOrgMembership } from "./lib/auth";
+import { validateBaseUrl } from "./lib/urlValidation";
 
 /** List credentials for an organization (secrets are masked; requires membership). */
 export const list = query({
@@ -69,6 +70,7 @@ export const upsert = mutation({
 	},
 	handler: async (ctx, args) => {
 		await requireOrgMembership(ctx, args.organizationId);
+		validateBaseUrl(args.baseUrl, args.provider);
 
 		const existing = await ctx.db
 			.query("apiCredentials")

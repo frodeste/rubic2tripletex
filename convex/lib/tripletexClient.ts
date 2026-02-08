@@ -107,10 +107,7 @@ export class TripletexClient {
 		});
 
 		if (!response.ok) {
-			const body = await response.text().catch(() => "");
-			throw new Error(
-				`Tripletex session creation failed: ${response.status} - ${body.slice(0, 500)}`,
-			);
+			throw new Error(`Tripletex session creation failed: ${response.status}`);
 		}
 
 		const data = (await response.json()) as SingleResponse<{ token: string }>;
@@ -150,10 +147,7 @@ export class TripletexClient {
 		});
 
 		if (!response.ok) {
-			const body = await response.text().catch(() => "");
-			throw new Error(
-				`Tripletex API error: ${response.status} ${response.statusText} - ${body.slice(0, 500)}`,
-			);
+			throw new Error(`Tripletex API error: ${response.status} ${response.statusText}`);
 		}
 
 		return response.json() as Promise<T>;

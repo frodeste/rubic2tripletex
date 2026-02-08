@@ -532,6 +532,34 @@ export const runPayments = internalAction({
 
 // --- Test Connection (internal) ---
 
+/**
+ * Sanitize an error for client display.
+ * Only expose the HTTP status code pattern (e.g. "API error: 401 Unauthorized").
+ * Everything else is replaced with a generic message to prevent information leakage.
+ */
+function sanitizeConnectionError(error: unknown): string {
+	const message = error instanceof Error ? error.message : String(error);
+
+	// Allow through known safe patterns from our own clients (status code only)
+	const statusMatch = message.match(/API error: (\d{3}\b[^-]*)/);
+	if (statusMatch) {
+		return `Connection failed: ${statusMatch[1].trim()}`;
+	}
+
+	const sessionMatch = message.match(/session creation failed: (\d{3})/);
+	if (sessionMatch) {
+		return `Authentication failed (HTTP ${sessionMatch[1]})`;
+	}
+
+	// For credential parsing errors
+	if (message.includes("JSON")) {
+		return "Invalid credential format. Please check your saved credentials.";
+	}
+
+	// Generic fallback — never forward raw error text
+	return "Connection test failed. Please verify your credentials and try again.";
+}
+
 export const testConnection = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
@@ -560,10 +588,8 @@ export const testConnection = internalAction({
 				});
 				return { success: true, message: `Connected. Found ${customers.length} customers.` };
 			} catch (error) {
-				return {
-					success: false,
-					error: error instanceof Error ? error.message : String(error),
-				};
+				console.error("Rubic connection test failed:", error);
+				return { success: false, error: sanitizeConnectionError(error) };
 			}
 		}
 
@@ -596,10 +622,8 @@ export const testConnection = internalAction({
 				message: `Connected. Found ${departments.values.length} departments.`,
 			};
 		} catch (error) {
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : String(error),
-			};
+			console.error("Tripletex connection test failed:", error);
+			return { success: false, error: sanitizeConnectionError(error) };
 		}
 	},
 });

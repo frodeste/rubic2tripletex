@@ -119,10 +119,7 @@ export class RubicClient {
 		});
 
 		if (!response.ok) {
-			const body = await response.text().catch(() => "");
-			throw new Error(
-				`Rubic API error: ${response.status} ${response.statusText} - ${body.slice(0, 500)}`,
-			);
+			throw new Error(`Rubic API error: ${response.status} ${response.statusText}`);
 		}
 
 		return response.json() as Promise<T>;
