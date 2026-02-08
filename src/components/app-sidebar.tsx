@@ -1,11 +1,20 @@
 "use client";
 
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { ArrowLeftRight, LayoutDashboard, LogOut, Network, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0/client";
 import { OrgSwitcher } from "@/components/org-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuPositioner,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Sidebar,
 	SidebarContent,
@@ -19,15 +28,6 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuPositioner,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
 	{

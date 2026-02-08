@@ -1,9 +1,9 @@
 "use client";
 
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
-import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
-import { useUser } from "@auth0/nextjs-auth0/client";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 if (!convexUrl) {

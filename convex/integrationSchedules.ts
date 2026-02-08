@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { syncType, tripletexEnv } from "./validators";
 import { requireOrgMembership } from "./lib/auth";
+import { syncType, tripletexEnv } from "./validators";
 
 /** List schedules for an organization (requires membership). */
 export const list = query({

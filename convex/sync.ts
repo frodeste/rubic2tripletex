@@ -1,12 +1,10 @@
 "use node";
 
-import { v } from "convex/values";
 import type { GenericActionCtx } from "convex/server";
-import { action, internalAction } from "./_generated/server";
+import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { DataModel, Id } from "./_generated/dataModel";
-import { RubicClient } from "./lib/rubicClient";
-import { TripletexClient, type TripletexCustomer } from "./lib/tripletexClient";
+import { action, internalAction } from "./_generated/server";
 import {
 	computeCustomerHash,
 	computeProductHash,
@@ -14,6 +12,8 @@ import {
 	mapRubicInvoiceToTripletexOrder,
 	mapRubicProductToTripletex,
 } from "./lib/mappers";
+import { RubicClient } from "./lib/rubicClient";
+import { TripletexClient, type TripletexCustomer } from "./lib/tripletexClient";
 import { tripletexEnv as tripletexEnvValidator } from "./validators";
 
 // --- Helpers ---

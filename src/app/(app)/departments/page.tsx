@@ -3,9 +3,6 @@
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowRight, Loader2, Network, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
-import { useOrganization } from "@/hooks/use-organization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +32,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useOrganization } from "@/hooks/use-organization";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface RubicDept {
 	productDepartmentID: number;

@@ -15,7 +15,7 @@ export const tripletexEnv = v.union(v.literal("sandbox"), v.literal("production"
 
 export const providerType = v.union(v.literal("rubic"), v.literal("tripletex"));
 
-export const memberRole = v.union(v.literal("admin"), v.literal("member"));
+export const memberRole = v.union(v.literal("owner"), v.literal("admin"), v.literal("member"));
 
 // --- Type exports ---
 
@@ -23,4 +23,4 @@ export type SyncType = "customers" | "products" | "invoices" | "payments";
 export type SyncStatus = "running" | "success" | "failed";
 export type TripletexEnv = "sandbox" | "production";
 export type ProviderType = "rubic" | "tripletex";
-export type MemberRole = "admin" | "member";
+export type MemberRole = "owner" | "admin" | "member";

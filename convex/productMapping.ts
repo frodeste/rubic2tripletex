@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
-import { tripletexEnv } from "./validators";
 import { requireOrgMembership } from "./lib/auth";
+import { tripletexEnv } from "./validators";
 
 /** List product mappings for an org and environment (requires membership). */
 export const list = query({
