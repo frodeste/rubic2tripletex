@@ -64,6 +64,13 @@ if command -v op &> /dev/null; then
 fi
 
 # ==============================================================================
+# Auth0 CLI Setup
+# ==============================================================================
+echo "Installing Auth0 CLI..."
+mkdir -p "$HOME/.local/bin"
+curl -sSfL https://raw.githubusercontent.com/auth0/auth0-cli/main/install.sh | sh -s -- -b "$HOME/.local/bin"
+
+# ==============================================================================
 # MCP Servers Setup (for Cursor AI)
 # ==============================================================================
 MCP_TEMPLATE="$SCRIPT_DIR/mcp.json.template"
@@ -95,6 +102,7 @@ echo "  fzf:          $(fzf --version 2>/dev/null || echo 'not installed')"
 echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
 echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"
+echo "  Auth0 CLI:    $(auth0 --version 2>/dev/null || echo 'not installed')"
 
 # ==============================================================================
 # Completion Message
@@ -119,6 +127,7 @@ echo "3. AUTHENTICATION"
 echo "   gh auth login          # GitHub CLI"
 echo "   op signin              # 1Password"
 echo "   vercel login           # Vercel"
+echo "   auth0 login            # Auth0 CLI"
 echo ""
 echo "4. START DEVELOPMENT"
 echo "   bun run dev            # Start Next.js dev server"

@@ -137,6 +137,18 @@ if command -v op &> /dev/null; then
 fi
 
 # ==============================================================================
+# Auth0 CLI Integration
+# ==============================================================================
+if command -v auth0 &> /dev/null; then
+    alias a0="auth0"
+    alias a0l="auth0 login"
+    alias a0apps="auth0 apps list"
+    alias a0apis="auth0 apis list"
+    alias a0logs="auth0 logs tail"
+    alias a0test="auth0 test login"
+fi
+
+# ==============================================================================
 # Path Extensions
 # ==============================================================================
 # Bun
@@ -246,6 +258,14 @@ help-dev() {
     echo "  opg <item>               get item"
     echo "  opsecret <item> <field>  get specific field"
     echo "  openv <file>             inject secrets from file"
+    echo ""
+    echo "Auth0:"
+    echo "  a0                       auth0 cli"
+    echo "  a0l                      login to Auth0"
+    echo "  a0apps                   list applications"
+    echo "  a0apis                   list APIs"
+    echo "  a0logs                   tail logs"
+    echo "  a0test                   test login flow"
     echo ""
     echo "Utilities:"
     echo "  mkcd <dir>               create and cd into directory"
