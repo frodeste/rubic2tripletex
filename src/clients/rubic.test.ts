@@ -35,7 +35,7 @@ describe("RubicClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		const customers = await client.getCustomers();
 
@@ -52,11 +52,11 @@ describe("RubicClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		await client.getCustomers();
 
-		expect(capturedHeaders?.get("Authorization")).toBe("Bearer test-api-key");
+		expect(capturedHeaders!.get("Authorization")).toBe("Bearer test-api-key");
 	});
 
 	test("getInvoices passes date range params", async () => {
@@ -68,7 +68,7 @@ describe("RubicClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		const start = new Date("2025-01-01T00:00:00Z");
 		const end = new Date("2025-01-31T23:59:59Z");
@@ -81,7 +81,7 @@ describe("RubicClient", () => {
 	test("throws on API error", async () => {
 		globalThis.fetch = mock(async () => {
 			return new Response("Unauthorized", { status: 401, statusText: "Unauthorized" });
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		expect(client.getCustomers()).rejects.toThrow("Rubic API error: 401 Unauthorized");
 	});

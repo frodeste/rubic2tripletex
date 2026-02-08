@@ -46,7 +46,7 @@ describe("TripletexClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 	}
 
 	test("creates session before making requests", async () => {
@@ -67,7 +67,7 @@ describe("TripletexClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		await client.searchCustomers({});
 
@@ -93,7 +93,7 @@ describe("TripletexClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		await client.searchCustomers({});
 		await client.searchProducts({});
@@ -129,7 +129,7 @@ describe("TripletexClient", () => {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		await client.createCustomer({
 			name: "Test Customer",
@@ -158,7 +158,7 @@ describe("TripletexClient", () => {
 				status: 500,
 				statusText: "Internal Server Error",
 			});
-		}) as typeof fetch;
+		}) as unknown as typeof fetch;
 
 		expect(client.searchCustomers({})).rejects.toThrow(
 			"Tripletex API error: 500 Internal Server Error",
