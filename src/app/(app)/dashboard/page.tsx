@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
+import type { Doc } from "../../../../convex/_generated/dataModel";
 import { useOrganization } from "@/hooks/use-organization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -192,21 +193,22 @@ export default function DashboardPage() {
 
 	const enabledEnvs: Array<"sandbox" | "production"> = [];
 	if (credentials) {
-		const tripletexCreds = (credentials as any[]).filter(
-			(c: any) => c.provider === "tripletex" && c.isEnabled,
+		const tripletexCreds = credentials.filter(
+			(c) => c.provider === "tripletex" && c.isEnabled,
 		);
 		for (const c of tripletexCreds) {
-			if (!enabledEnvs.includes(c.environment as "sandbox" | "production")) {
-				enabledEnvs.push(c.environment as "sandbox" | "production");
+			const env = c.environment as "sandbox" | "production";
+			if (!enabledEnvs.includes(env)) {
+				enabledEnvs.push(env);
 			}
 		}
 	}
 
-	const runs = (syncRuns ?? []) as any[];
-	const totalProcessed = runs.reduce((sum: number, r: any) => sum + r.recordsProcessed, 0);
-	const totalFailed = runs.reduce((sum: number, r: any) => sum + r.recordsFailed, 0);
-	const successCount = runs.filter((r: any) => r.status === "success").length;
-	const failedCount = runs.filter((r: any) => r.status === "failed").length;
+	const runs: Doc<"syncState">[] = syncRuns ?? [];
+	const totalProcessed = runs.reduce((sum, r) => sum + r.recordsProcessed, 0);
+	const totalFailed = runs.reduce((sum, r) => sum + r.recordsFailed, 0);
+	const successCount = runs.filter((r) => r.status === "success").length;
+	const failedCount = runs.filter((r) => r.status === "failed").length;
 
 	return (
 		<div className="space-y-6">
@@ -325,7 +327,7 @@ export default function DashboardPage() {
 						</TableHeader>
 						<TableBody>
 							{syncRuns && syncRuns.length > 0 ? (
-								(syncRuns as any[]).map((run: any) => (
+								syncRuns.map((run) => (
 									<TableRow key={run._id}>
 										<TableCell>
 											<EnvBadge env={run.tripletexEnv} />
