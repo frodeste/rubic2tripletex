@@ -1,10 +1,18 @@
 "use client";
 
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { useMutation, useQuery } from "convex/react";
-import { Building2, ChevronsUpDown, Plus } from "lucide-react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	CommandSeparator,
+} from "@/components/ui/command";
 import {
 	Dialog,
 	DialogContent,
@@ -13,19 +21,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuPositioner,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { useOrganization } from "@/hooks/use-organization";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 function slugify(name: string): string {
 	return name
@@ -35,13 +37,13 @@ function slugify(name: string): string {
 }
 
 export function OrgSwitcher() {
-	const { user } = useUser();
+	const { isAuthenticated } = useConvexAuth();
 	const { organizationId, organizationName, setOrganizationId } = useOrganization();
 
-	const isAuthenticated = !!user?.sub;
 	const orgs = useQuery(api.organizations.listForUser, isAuthenticated ? {} : "skip");
 	const createOrg = useMutation(api.organizations.create);
 
+	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [newOrgName, setNewOrgName] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
@@ -74,64 +76,70 @@ export function OrgSwitcher() {
 		}
 	}
 
+	function handleSelectOrg(orgId: string) {
+		setOrganizationId(orgId as Id<"organizations">);
+		setPopoverOpen(false);
+	}
+
+	function handleCreateClick() {
+		setPopoverOpen(false);
+		setDialogOpen(true);
+	}
+
+	const validOrgs = orgs?.filter((org): org is NonNullable<typeof org> => org !== null) ?? [];
+
 	return (
 		<>
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<SidebarMenuButton
-							size="lg"
-							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-						/>
-					}
-				>
-					<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-						<Building2 className="size-4" />
-					</div>
-					<div className="grid flex-1 text-left text-sm leading-tight">
-						<span className="truncate font-semibold">
-							{organizationName ?? "Select Organization"}
-						</span>
-						<span className="truncate text-xs text-muted-foreground">
-							{orgs?.length ?? 0} organization{(orgs?.length ?? 0) !== 1 ? "s" : ""}
-						</span>
-					</div>
-					<ChevronsUpDown className="ml-auto size-4" />
-				</DropdownMenuTrigger>
-				<DropdownMenuPositioner align="start" side="bottom">
-					<DropdownMenuContent className="min-w-56 rounded-lg">
-						{orgs?.map((org) =>
-							org ? (
-								<DropdownMenuItem
-									key={org._id}
-									onClick={() => setOrganizationId(org._id)}
-									className="gap-2 p-2"
-								>
-									<div className="flex size-6 items-center justify-center rounded-sm border">
+			<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+				<PopoverTrigger asChild>
+					<SidebarMenuButton
+						size="lg"
+						className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+					>
+						<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+							<Building2 className="size-4" />
+						</div>
+						<div className="grid flex-1 text-left text-sm leading-tight">
+							<span className="truncate font-semibold">
+								{organizationName ?? "Select Organization"}
+							</span>
+							<span className="truncate text-xs text-muted-foreground">
+								{validOrgs.length} organization{validOrgs.length !== 1 ? "s" : ""}
+							</span>
+						</div>
+						<ChevronsUpDown className="ml-auto size-4" />
+					</SidebarMenuButton>
+				</PopoverTrigger>
+				<PopoverContent className="min-w-56 p-0" align="start">
+					<Command>
+						<CommandInput placeholder="Search organizations..." />
+						<CommandList>
+							<CommandEmpty>No organizations found.</CommandEmpty>
+							<CommandGroup>
+								{validOrgs.map((org) => (
+									<CommandItem
+										key={org._id}
+										value={org.name}
+										onSelect={() => handleSelectOrg(org._id)}
+										className="gap-2"
+									>
 										<Building2 className="size-4 shrink-0" />
-									</div>
-									<span className="truncate">{org.name}</span>
-									{org._id === organizationId && (
-										<span className="ml-auto text-xs text-muted-foreground">Active</span>
-									)}
-								</DropdownMenuItem>
-							) : null,
-						)}
-						{(!orgs || orgs.length === 0) && (
-							<DropdownMenuItem disabled className="text-muted-foreground">
-								No organizations yet
-							</DropdownMenuItem>
-						)}
-						<DropdownMenuSeparator />
-						<DropdownMenuItem onClick={() => setDialogOpen(true)} className="gap-2 p-2">
-							<div className="flex size-6 items-center justify-center rounded-sm border bg-background">
-								<Plus className="size-4 shrink-0" />
-							</div>
-							<span className="font-medium">Create Organization</span>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenuPositioner>
-			</DropdownMenu>
+										<span className="truncate">{org.name}</span>
+										{org._id === organizationId && <Check className="ml-auto size-4 shrink-0" />}
+									</CommandItem>
+								))}
+							</CommandGroup>
+							<CommandSeparator />
+							<CommandGroup>
+								<CommandItem onSelect={handleCreateClick} className="gap-2">
+									<Plus className="size-4 shrink-0" />
+									<span>Create Organization</span>
+								</CommandItem>
+							</CommandGroup>
+						</CommandList>
+					</Command>
+				</PopoverContent>
+			</Popover>
 
 			<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 				<DialogContent>

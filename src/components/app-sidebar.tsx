@@ -126,7 +126,7 @@ export function AppSidebar() {
 							</DropdownMenuTrigger>
 							<DropdownMenuPositioner side="bottom" align="end">
 								<DropdownMenuContent className="min-w-56 rounded-lg">
-									<DropdownMenuItem className="gap-2" disabled>
+									<DropdownMenuItem className="gap-2" render={<Link href="/profile" />}>
 										<User className="size-4" />
 										<span>Profile</span>
 									</DropdownMenuItem>

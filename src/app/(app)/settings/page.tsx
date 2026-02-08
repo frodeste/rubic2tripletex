@@ -472,22 +472,27 @@ export default function SettingsPage() {
 						<CardContent>
 							{members && members.length > 0 ? (
 								<div className="space-y-3">
-									{members.map((member) => (
-										<div
-											key={member._id}
-											className="flex items-center justify-between rounded-lg border p-4"
-										>
-											<div>
-												<span className="font-mono text-sm">{member.auth0UserId}</span>
-												<p className="text-xs text-muted-foreground">
-													Joined {new Date(member.joinedAt).toLocaleDateString()}
-												</p>
+									{members.map((member) => {
+										if (!member) return null;
+										return (
+											<div
+												key={member._id}
+												className="flex items-center justify-between rounded-lg border p-4"
+											>
+												<div>
+													<span className="font-mono text-sm">
+														{member.user?.name ?? member.user?.email ?? "Unknown user"}
+													</span>
+													<p className="text-xs text-muted-foreground">
+														Joined {new Date(member.joinedAt).toLocaleDateString()}
+													</p>
+												</div>
+												<Badge variant={member.role === "admin" ? "default" : "secondary"}>
+													{member.role}
+												</Badge>
 											</div>
-											<Badge variant={member.role === "admin" ? "default" : "secondary"}>
-												{member.role}
-											</Badge>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							) : (
 								<div className="py-8 text-center text-muted-foreground">No members found</div>
