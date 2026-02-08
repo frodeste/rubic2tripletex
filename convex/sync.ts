@@ -2,7 +2,7 @@
 
 import type { GenericActionCtx } from "convex/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { DataModel, Id } from "./_generated/dataModel";
 import { action, internalAction } from "./_generated/server";
 import {
@@ -694,14 +694,22 @@ async function requireAuthAndMembership(
 	if (!identity) {
 		throw new Error("Unauthenticated: you must be logged in to perform this action.");
 	}
+
+	// Fetch the Convex user record (JIT-provisioned on login).
+	// checkMembership requires a Convex userId, not the Auth0 subject string.
+	const user = await ctx.runQuery(api.users.current, {});
+	if (!user) {
+		throw new Error("User record not found. Please reload the page.");
+	}
+
 	const membership = await ctx.runQuery(internal.organizations.checkMembership, {
 		organizationId,
-		auth0UserId: identity.subject,
+		userId: user._id,
 	});
 	if (!membership) {
 		throw new Error("Forbidden: you are not a member of this organization.");
 	}
-	return { identity, membership };
+	return { identity, user, membership };
 }
 
 const syncArgs = {

@@ -12,42 +12,23 @@ import { mutation, query } from "./_generated/server";
 // inside the handler.
 // ---------------------------------------------------------------------------
 
-export const authenticatedQuery = customQuery(
-	query,
-	customCtx(async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Unauthenticated: you must be logged in.");
-		}
+const authContext = customCtx(async (ctx) => {
+	const identity = await ctx.auth.getUserIdentity();
+	if (!identity) {
+		throw new Error("Unauthenticated: you must be logged in.");
+	}
 
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-			.unique();
-		if (!user) {
-			throw new Error("User record not found. Please reload the page.");
-		}
+	const user = await ctx.db
+		.query("users")
+		.withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+		.unique();
+	if (!user) {
+		throw new Error("User record not found. Please reload the page.");
+	}
 
-		return { user, identity };
-	}),
-);
+	return { user, identity };
+});
 
-export const authenticatedMutation = customMutation(
-	mutation,
-	customCtx(async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Unauthenticated: you must be logged in.");
-		}
+export const authenticatedQuery = customQuery(query, authContext);
 
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-			.unique();
-		if (!user) {
-			throw new Error("User record not found. Please reload the page.");
-		}
-
-		return { user, identity };
-	}),
-);
+export const authenticatedMutation = customMutation(mutation, authContext);

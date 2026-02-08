@@ -1,4 +1,7 @@
 import { v } from "convex/values";
+
+const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
+
 import { authenticatedMutation, authenticatedQuery } from "./functions";
 import { requireOrgAdmin, requireOrgMembership } from "./lib/auth";
 import { memberRole } from "./validators";
@@ -14,7 +17,11 @@ export const create = authenticatedMutation({
 		role: memberRole,
 	},
 	handler: async (ctx, args) => {
-		await requireOrgAdmin(ctx, args.organizationId);
+		const { membership: callerMembership } = await requireOrgAdmin(ctx, args.organizationId);
+
+		if (args.role === "owner" && callerMembership.role !== "owner") {
+			throw new Error("Only owners can invite other owners.");
+		}
 
 		// Check for existing pending invitation
 		const existingInvitation = await ctx.db
@@ -50,7 +57,7 @@ export const create = authenticatedMutation({
 
 		// Generate token and expiration
 		const token = crypto.randomUUID();
-		const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+		const expiresAt = Date.now() + SEVEN_DAYS_IN_MS;
 
 		// Create invitation
 		const invitationId = await ctx.db.insert("invitations", {
@@ -109,6 +116,11 @@ export const accept = authenticatedMutation({
 
 		if (invitation.status !== "pending") {
 			throw new Error("Invitation is no longer valid");
+		}
+
+		// Verify the accepting user matches the invited email
+		if (ctx.user.email !== invitation.email) {
+			throw new Error("This invitation was sent to a different email address.");
 		}
 
 		// Check expiration

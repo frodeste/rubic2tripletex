@@ -1,6 +1,4 @@
-import type { GenericQueryCtx } from "convex/server";
 import { v } from "convex/values";
-import type { DataModel } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { authenticatedMutation, authenticatedQuery } from "./functions";
 
@@ -104,34 +102,3 @@ export const updatePreferences = authenticatedMutation({
 		});
 	},
 });
-
-/**
- * Look up the Convex user record for the authenticated caller.
- * Returns null if not found (user hasn't been JIT-provisioned yet).
- */
-export async function getCurrentUser(ctx: {
-	auth: GenericQueryCtx<DataModel>["auth"];
-	db: GenericQueryCtx<DataModel>["db"];
-}) {
-	const identity = await ctx.auth.getUserIdentity();
-	if (!identity) return null;
-
-	return await ctx.db
-		.query("users")
-		.withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
-		.unique();
-}
-
-/**
- * Look up the Convex user record for the authenticated caller, or throw.
- */
-export async function getCurrentUserOrThrow(ctx: {
-	auth: GenericQueryCtx<DataModel>["auth"];
-	db: GenericQueryCtx<DataModel>["db"];
-}) {
-	const user = await getCurrentUser(ctx);
-	if (!user) {
-		throw new Error("User record not found. Please reload the page.");
-	}
-	return user;
-}

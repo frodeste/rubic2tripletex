@@ -130,7 +130,12 @@ export const addMember = authenticatedMutation({
 		role: memberRole,
 	},
 	handler: async (ctx, args) => {
-		await requireOrgAdmin(ctx, args.organizationId);
+		const { membership: callerMembership } = await requireOrgAdmin(ctx, args.organizationId);
+
+		if (args.role === "owner" && callerMembership.role !== "owner") {
+			throw new Error("Only owners can add other owners.");
+		}
+
 		const existing = await ctx.db
 			.query("memberships")
 			.withIndex("by_org_and_user", (q) =>
@@ -179,6 +184,13 @@ export const removeMember = authenticatedMutation({
 	},
 });
 
+/**
+ * Check whether a user is a member of the specified organization.
+ * Returns the membership document if found, or null otherwise.
+ *
+ * This is an internal query used by actions (e.g. sync.ts) that cannot
+ * access ctx.db directly and need to verify org membership via ctx.runQuery.
+ */
 export const checkMembership = internalQuery({
 	args: {
 		organizationId: v.id("organizations"),
