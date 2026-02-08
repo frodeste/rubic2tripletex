@@ -19,7 +19,9 @@ Next.js 16 (App Router) · TypeScript · Node.js 24 · Bun · Vercel · Neon Pos
 
 **Option A — DevContainer (recommended):**
 
-Open in VS Code/Cursor with the Dev Containers extension. The pre-built image from GHCR includes Node 24, Bun, and all tooling. See [docs/development.md](docs/development.md) for details.
+Open in VS Code/Cursor with the Dev Containers extension. The pre-built image from GHCR includes Node 24, Bun, and all tooling -- managed entirely via [devcontainer features](https://containers.dev/features). See [docs/development.md](docs/development.md) for details.
+
+**AI coding tools** (Claude Code, OpenAI Codex) are pre-installed. Set `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` as environment variables on your host before opening the container.
 
 **Option B — Manual:**
 

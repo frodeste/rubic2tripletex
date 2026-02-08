@@ -1,17 +1,11 @@
 {
   "name": "Rubic2Tripletex",
-  // Use pre-built image from GHCR (faster startup)
-  "image": "ghcr.io/frodeste/rubic2tripletex-devcontainer:latest",
-  // Uncomment below to build locally instead (for Dockerfile changes)
-  // "build": {
-  //   "dockerfile": "Dockerfile",
-  //   "context": "..",
-  //   "args": {
-  //     "BUN_VERSION": "1.2.4"
-  //   }
-  // },
+  // Base image: official TypeScript + Node.js 24 (includes TypeScript globally)
+  // The devcontainers/ci GitHub Action builds this + features into a pre-built image on GHCR
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
   "workspaceFolder": "/workspaces/rubic2tripletex",
   "features": {
+    // ---- Shell and utilities ----
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
       "installOhMyZsh": true,
@@ -21,6 +15,36 @@
     "ghcr.io/devcontainers/features/github-cli:1": {
       "installDirectlyFromGitHubRelease": true,
       "version": "latest"
+    },
+
+    // ---- AI coding tools ----
+    "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {},
+    "ghcr.io/jsburckhardt/devcontainer-features/codex:1": {},
+
+    // ---- Package managers and runtimes ----
+    "ghcr.io/devcontainers-extra/features/bun:1": {},
+
+    // ---- System tools ----
+    "ghcr.io/flexwie/devcontainer-features/op:1": {},
+    "ghcr.io/rails/devcontainer/features/postgres-client:1": {},
+    "ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
+      "packages": "build-essential,pkg-config,libssl-dev,jq,httpie"
+    },
+
+    // ---- CLI utilities ----
+    "ghcr.io/devcontainers-extra/features/fzf:1": {},
+    "ghcr.io/devcontainers-extra/features/fd:1": {},
+    "ghcr.io/jsburckhardt/devcontainer-features/bat:1": {},
+
+    // ---- Zsh plugins ----
+    "ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
+      "plugins": "zsh-autosuggestions zsh-syntax-highlighting zsh-completions",
+      "omzPlugins": "https://github.com/Aloxaf/fzf-tab"
+    },
+
+    // ---- Global npm tools (TypeScript comes with base image) ----
+    "ghcr.io/devcontainers-extra/features/npm-packages:1": {
+      "packages": "@biomejs/biome,vercel"
     }
   },
   "customizations": {

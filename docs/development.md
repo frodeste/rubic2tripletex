@@ -2,7 +2,21 @@
 
 ## DevContainer (Recommended)
 
-The project includes a pre-built DevContainer image (`ghcr.io/frodeste/rubic2tripletex-devcontainer`) with Node 24, Bun, PostgreSQL client, and shell tooling.
+The project uses a DevContainer built entirely from [devcontainer features](https://containers.dev/features) on top of the `typescript-node:24-bookworm` base image. A pre-built image is pushed to GHCR by the `devcontainers/ci` GitHub Action for faster startup.
+
+Included tools (all managed as features, auto-updated by Dependabot):
+
+| Tool | Purpose |
+| --- | --- |
+| Node.js 24, TypeScript | Runtime and type checking |
+| Bun | Package manager and test runner |
+| Claude Code, OpenAI Codex | AI coding assistants |
+| GitHub CLI, 1Password CLI | Authentication |
+| PostgreSQL client (psql) | Database access (Neon) |
+| Biome, Vercel CLI | Linting/formatting, deployment |
+| fzf, fd, bat, jq, httpie | Shell utilities |
+
+### Getting started
 
 1. Open in VS Code/Cursor with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 2. Click **Reopen in Container** (or run the command from the palette)
@@ -10,6 +24,27 @@ The project includes a pre-built DevContainer image (`ghcr.io/frodeste/rubic2tri
 4. Fill in `.env.local` with your credentials (or run `vercel env pull .env.local`)
 
 Port **3000** (Next.js) is forwarded automatically.
+
+## AI Coding Tools
+
+Claude Code and OpenAI Codex are pre-installed via devcontainer features. To use them, set the required API keys as environment variables **on your host machine** before opening the container:
+
+```bash
+# Add to your shell profile (~/.zshrc, ~/.bashrc, etc.)
+export ANTHROPIC_API_KEY="sk-ant-..."
+export OPENAI_API_KEY="sk-..."
+```
+
+These are forwarded into the container via `remoteEnv` in `devcontainer.json`.
+
+### Quick start
+
+```bash
+claude          # Start Claude Code interactive session
+codex           # Start OpenAI Codex interactive session
+```
+
+Both tools have full access to the workspace and can read/edit files, run commands, and interact with git.
 
 ## Manual Setup
 

@@ -85,14 +85,16 @@ fi
 # ==============================================================================
 echo ""
 echo "Verifying installations..."
-echo "  Node.js:    $(node --version)"
-echo "  Bun:        $(bun --version 2>/dev/null || echo 'not installed')"
-echo "  TypeScript: $(tsc --version 2>/dev/null || echo 'not installed')"
-echo "  Vercel:     $(vercel --version 2>/dev/null || echo 'not installed')"
-echo "  gh CLI:     $(gh --version 2>/dev/null | head -1 || echo 'not installed')"
-echo "  1Password:  $(op --version 2>/dev/null || echo 'not installed')"
-echo "  fzf:        $(fzf --version 2>/dev/null || echo 'not installed')"
-echo "  psql:       $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  Node.js:      $(node --version)"
+echo "  Bun:          $(bun --version 2>/dev/null || echo 'not installed')"
+echo "  TypeScript:   $(tsc --version 2>/dev/null || echo 'not installed')"
+echo "  Vercel:       $(vercel --version 2>/dev/null || echo 'not installed')"
+echo "  gh CLI:       $(gh --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  1Password:    $(op --version 2>/dev/null || echo 'not installed')"
+echo "  fzf:          $(fzf --version 2>/dev/null || echo 'not installed')"
+echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
+echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"
 
 # ==============================================================================
 # Completion Message
