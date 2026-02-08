@@ -5,7 +5,7 @@
 		"allowJs": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"noImplicitAny": false,
+		"noImplicitAny": false /* Convex generated types create circular deps between sync.ts and api.d.ts */,
 		"noEmit": true,
 		"esModuleInterop": true,
 		"module": "esnext",
