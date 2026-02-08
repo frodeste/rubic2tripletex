@@ -59,23 +59,7 @@ updates:
         patterns:
           - "*"
 
-  # Docker (devcontainer)
-  - package-ecosystem: "docker"
-    directory: "/.devcontainer"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      timezone: "Europe/Oslo"
-    reviewers:
-      - "frodeste"
-    labels:
-      - "dependencies"
-      - "docker"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-
-  # Dev Container Features
+  # Dev Container Features (base image + all tool features)
   - package-ecosystem: "devcontainers"
     directory: "/"
     schedule:
