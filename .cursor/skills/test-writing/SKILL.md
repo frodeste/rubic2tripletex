@@ -84,7 +84,7 @@ Use factory functions when the input type has more than 3-4 fields. For simpler 
 
 ### Pattern 2: Mocking `globalThis.fetch` for API Clients
 
-Save and restore the original fetch. Use `mock()` from `bun:test`:
+Save and restore the original fetch. Use `mock()` from `bun:test` and its built-in tracking features:
 
 ```typescript
 const originalFetch = globalThis.fetch;
@@ -95,32 +95,38 @@ describe("MyClient", () => {
 	});
 
 	test("fetches data correctly", async () => {
-		globalThis.fetch = mock(async (url: string | URL | Request) => {
+		const mockFetch = mock(async (url: string | URL | Request) => {
 			return new Response(JSON.stringify([{ id: 1 }]), {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
-		}) as unknown as typeof fetch;
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
 		const result = await client.getData();
 		expect(result).toHaveLength(1);
+		expect(mockFetch).toHaveBeenCalledTimes(1);
 	});
 
 	test("throws on API error", async () => {
-		globalThis.fetch = mock(async () => {
+		const mockFetch = mock(async () => {
 			return new Response("Unauthorized", { status: 401, statusText: "Unauthorized" });
-		}) as unknown as typeof fetch;
+		});
+		globalThis.fetch = mockFetch as unknown as typeof fetch;
 
 		expect(client.getData()).rejects.toThrow();
+		expect(mockFetch).toHaveBeenCalledTimes(1);
 	});
 });
 ```
 
 Key details:
 - Store `originalFetch` at module scope, restore in `afterEach`
+- Assign `mock()` to a variable (`mockFetch`) to access its tracking properties
+- Use `expect(mockFetch).toHaveBeenCalledTimes(1)` instead of manual counters
+- Access call arguments via `mockFetch.mock.calls` when needed (e.g., to inspect captured URLs or headers)
 - Cast mock as `unknown as typeof fetch` for type compatibility
 - Return `new Response(JSON.stringify(data), { status, headers })` to simulate responses
-- Track calls with local variables (e.g., `callCount`, `capturedUrl`, `capturedHeaders`)
 
 ### Pattern 3: Pure Mapper Tests
 
