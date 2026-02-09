@@ -39,7 +39,7 @@
 		// ---- Zsh plugins ----
 		"ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
 			"plugins": "zsh-autosuggestions zsh-syntax-highlighting zsh-completions",
-			"omzPlugins": "https://github.com/Aloxaf/fzf-tab"
+			"omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions https://github.com/zsh-users/zsh-syntax-highlighting https://github.com/zsh-users/zsh-completions https://github.com/Aloxaf/fzf-tab"
 		},
 
 		// ---- Global npm tools (TypeScript comes with base image) ----
