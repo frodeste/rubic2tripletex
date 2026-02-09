@@ -14,6 +14,7 @@ import type * as crons from "../crons.js";
 import type * as customerMapping from "../customerMapping.js";
 import type * as departmentMapping from "../departmentMapping.js";
 import type * as functions from "../functions.js";
+import type * as http from "../http.js";
 import type * as integrationSchedules from "../integrationSchedules.js";
 import type * as invitations from "../invitations.js";
 import type * as invoiceMapping from "../invoiceMapping.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   customerMapping: typeof customerMapping;
   departmentMapping: typeof departmentMapping;
   functions: typeof functions;
+  http: typeof http;
   integrationSchedules: typeof integrationSchedules;
   invitations: typeof invitations;
   invoiceMapping: typeof invoiceMapping;
