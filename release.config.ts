@@ -37,7 +37,10 @@ const config: Options = {
 						// Highlight breaking changes with emoji
 						if (commit.notes) {
 							for (const note of commit.notes) {
-								if (note.title === "BREAKING CHANGE" || note.title === "BREAKING CHANGES") {
+								if (
+									note.title === "BREAKING CHANGE" ||
+									note.title === "BREAKING CHANGES"
+								) {
 									note.title = "🚨 BREAKING CHANGES";
 								}
 							}
