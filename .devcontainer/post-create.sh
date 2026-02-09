@@ -18,6 +18,12 @@ git config --global fetch.prune true
 git config --global diff.colorMoved zebra
 
 # ==============================================================================
+# Zsh Plugins (fallback if devcontainer feature didn't install them)
+# ==============================================================================
+echo "Checking zsh plugins..."
+bash "$SCRIPT_DIR/zsh-setup.sh"
+
+# ==============================================================================
 # Zsh Configuration
 # ==============================================================================
 CUSTOM_ZSHRC="$SCRIPT_DIR/.zshrc"
