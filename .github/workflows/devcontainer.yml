@@ -12,8 +12,8 @@ on:
       - "bun.lock"
   pull_request:
     branches: [main]
-    paths:
-      - ".devcontainer/**"
+    # No path filter here: we detect devcontainer changes in the job so we only
+    # run when the *current* commit range touches those paths (not the whole PR).
   workflow_dispatch:
 
 env:
@@ -21,7 +21,37 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/rubic2tripletex-devcontainer
 
 jobs:
+  # On pull_request, only run the build when the latest push changed devcontainer-related paths.
+  # GitHub’s path filter applies to the entire PR diff, so it would run on every new commit
+  # once the PR touched .devcontainer; this job restricts to the current commit range.
+  devcontainer-changed:
+    name: Check devcontainer changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: check
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.sha }}"
+          # Same paths that trigger push build
+          PATHS='^.devcontainer/|^.github/workflows/devcontainer\.yml$|^package\.json$|^bun\.lock$'
+          if git diff --name-only "$BASE" "$HEAD" | grep -qE "$PATHS"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: [devcontainer-changed]
+    if: |
+      always() &&
+      (needs.devcontainer-changed.result == 'skipped' ||
+       (needs.devcontainer-changed.result == 'success' && needs.devcontainer-changed.outputs.changed == 'true'))
     name: Build Devcontainer Image
     runs-on: ubuntu-latest
     permissions:
