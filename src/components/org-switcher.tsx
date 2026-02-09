@@ -1,6 +1,6 @@
 "use client";
 
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -38,11 +38,12 @@ function slugify(name: string): string {
 }
 
 export function OrgSwitcher() {
-	const { isAuthenticated } = useConvexAuth();
-	const { organizationId, organizationName, setOrganizationId } = useOrganization();
+	const { organizationId, organizationName, setOrganizationId, userId } = useOrganization();
 
-	const orgs = useQuery(api.organizations.listForUser, isAuthenticated ? {} : "skip");
-	const createOrg = useMutation(api.organizations.create);
+	// Gate query on userId (set after storeUser completes) rather than raw
+	// useConvexAuth().isAuthenticated to avoid querying before the user record exists.
+	const orgs = useQuery(api.organizations.listForUser, userId ? {} : "skip");
+	const createOrg = useAction(api.organizations.create);
 
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);

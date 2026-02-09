@@ -43,9 +43,9 @@ bun run dev                   # http://localhost:3000
 | `npx convex dev` | Start Convex dev server (standalone) |
 | `npx convex dashboard` | Open Convex dashboard |
 
-## Auth0 M2M Setup (Profile Sync)
+## Auth0 M2M Setup
 
-When a user updates their name on the profile page, the app syncs the change back to Auth0 via the Management API. This requires a **Machine-to-Machine (M2M) application** in Auth0.
+Convex is the source of truth for organizations, memberships, and roles. Changes are synced to Auth0 via the Management API using a **Machine-to-Machine (M2M) application**. Auth0 Organizations and Roles are auto-created on demand -- no manual setup in the Auth0 Dashboard is required.
 
 ### 1. Create an M2M application
 
@@ -53,7 +53,22 @@ When a user updates their name on the profile page, the app syncs the change bac
 2. Choose **Machine to Machine Applications**
 3. Name it something like `Rubic2Tripletex M2M`
 4. Authorize it for the **Auth0 Management API** (`https://<your-tenant>.eu.auth0.com/api/v2/`)
-5. Grant the `update:users` permission (scope)
+5. Grant the following scopes:
+
+| Scope | Purpose |
+| --- | --- |
+| `update:users` | Sync profile changes (name) |
+| `read:roles` | Look up existing Auth0 roles |
+| `create:roles` | Auto-create Auth0 roles on demand |
+| `create:organizations` | Create Auth0 Organizations from Convex |
+| `read:organizations` | Verify Auth0 org state |
+| `update:organizations` | Sync org name changes |
+| `read:organization_members` | Read org membership |
+| `create:organization_members` | Add members to Auth0 orgs |
+| `delete:organization_members` | Remove members from Auth0 orgs |
+| `read:organization_member_roles` | Read member roles |
+| `create:organization_member_roles` | Assign roles to org members |
+| `delete:organization_member_roles` | Remove roles from org members |
 
 ### 2. Set Convex environment variables
 
@@ -72,7 +87,7 @@ npx convex env set AUTH0_M2M_CLIENT_SECRET <client-secret-from-step-1>
 | `AUTH0_M2M_CLIENT_ID` | Client ID of the M2M application |
 | `AUTH0_M2M_CLIENT_SECRET` | Client secret of the M2M application |
 
-> **Note:** Without these credentials the profile page still works — Convex is updated as usual, but the Auth0 sync is silently skipped. A warning is logged to the Convex dashboard.
+> **Note:** Without these credentials, Convex still works normally as the source of truth. Auth0 sync is silently skipped and a warning is logged to the Convex dashboard.
 
 See [docs/auth0-post-login-action.md](docs/auth0-post-login-action.md) for the complementary Auth0 Post-Login Action setup.
 

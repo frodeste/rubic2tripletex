@@ -21,13 +21,34 @@ graph LR
 | --- | --- | --- |
 | **Authentication** | Auth0 | Credentials, SSO/MFA, login/logout, ID tokens |
 | **Identity facts** | Auth0 (read-only) | `sub`, `email`, `name`, `picture` — synced to Convex on login |
-| **Organizations** | Convex | Name, slug, settings, creation, deletion |
-| **Memberships & Roles** | Convex | `owner`, `admin`, `member` roles per org |
-| **Invitations** | Convex | Invite lifecycle: create, accept, revoke, expire |
+| **Organizations** | Convex | Name, slug, settings, creation, deletion; Auth0 Organization auto-created via M2M |
+| **Role assignments** | Convex | Convex `memberships.role` is the source of truth; synced to Auth0 Organization Roles via M2M (best-effort) |
+| **Memberships** | Convex | Convex `memberships` table is the source of truth; synced to Auth0 Organization membership via M2M (best-effort) |
+| **Invitations** | Convex | Invite lifecycle: create, accept, revoke, expire (synced to Auth0 on acceptance) |
 | **User app data** | Convex | Preferences, `lastActiveAt`, feature flags, audit trails |
 | **Business data** | Convex | API credentials, sync state, mappings, schedules |
 
-**Rule:** Auth0 is never written to for application data. Convex is the single source of truth for everything except authentication credentials.
+**Rule:** Convex owns all organization, membership, and role data. Changes are written to Convex first, then synced to Auth0 via M2M (best-effort). Auth0 failures never block Convex operations. Auth0 roles are auto-created on demand and their IDs are cached in the `auth0RoleMappings` table.
+
+## Roles
+
+Five roles are defined in Convex and assigned per-organization via the `memberships` table. Auth0 roles are auto-created via M2M on first use and their IDs are cached in the `auth0RoleMappings` table:
+
+| Role | Purpose | Key permissions |
+| --- | --- | --- |
+| **owner** | Organization creator | Everything including org deletion, billing, member management |
+| **admin** | Administrator | Manage members, invitations, API credentials, org settings |
+| **member** | Day-to-day operator | Trigger syncs, manage schedules and mappings, view data |
+| **billing** | Billing manager | Manage billing/subscriptions (future), view dashboard |
+| **viewer** | Read-only stakeholder | View dashboard, sync history, mappings — no write access |
+
+**Permission hierarchy:** owner > admin > member > billing/viewer (billing and viewer are lateral scopes).
+
+Auth helpers in `convex/lib/auth.ts`:
+- `requireOrgMembership()` — any role (read access)
+- `requireOrgOperator()` — member, admin, owner (write/sync operations)
+- `requireOrgAdmin()` — admin, owner (member management, credentials, settings)
+- `requireOrgBilling()` — billing, admin, owner (billing operations)
 
 ## Authentication Flow
 
@@ -56,13 +77,22 @@ All Convex functions enforce authorization through a layered approach:
 
 2. **`requireOrgMembership(ctx, orgId)`** (from `convex/lib/auth.ts`)
    - Checks the `memberships` table for the caller + org
+   - Any role passes (including viewer and billing) — used for read operations
    - Returns `{ identity, user, membership }` on success
-   - Throws `Forbidden` if not a member
 
-3. **`requireOrgAdmin(ctx, orgId)`** (from `convex/lib/auth.ts`)
-   - Same as above, but also checks `role === "admin" || role === "owner"`
+3. **`requireOrgOperator(ctx, orgId)`** (from `convex/lib/auth.ts`)
+   - Requires member, admin, or owner role
+   - Blocks viewer and billing from write/sync operations
 
-Every business-data function (API credentials, sync state, mappings) uses these guards. There is no unauthenticated access to tenant data.
+4. **`requireOrgAdmin(ctx, orgId)`** (from `convex/lib/auth.ts`)
+   - Requires admin or owner role
+   - Used for member management, API credentials, org settings
+
+5. **`requireOrgBilling(ctx, orgId)`** (from `convex/lib/auth.ts`)
+   - Requires billing, admin, or owner role
+   - Used for billing operations (future)
+
+Every business-data function uses these guards. There is no unauthenticated access to tenant data. Read operations use `requireOrgMembership`, write operations use `requireOrgOperator` or `requireOrgAdmin` depending on sensitivity.
 
 ## Multi-Tenancy Model
 
@@ -101,7 +131,8 @@ Key tables (see `convex/schema.ts` for full definitions):
 | --- | --- |
 | `users` | JIT-provisioned from Auth0, keyed by `tokenIdentifier` |
 | `organizations` | Tenant entities with name, slug, optional `auth0OrgId` |
-| `memberships` | User-org relationships with `owner`/`admin`/`member` roles |
+| `memberships` | User-org relationships with `owner`/`admin`/`member`/`billing`/`viewer` roles (source of truth, synced to Auth0) |
+| `auth0RoleMappings` | Persistent cache of Convex role name → Auth0 role ID mappings (auto-created on demand) |
 | `invitations` | Invitation lifecycle (pending → accepted/expired/revoked) |
 | `apiCredentials` | Per-org, per-provider, per-environment API keys |
 | `integrationSchedules` | Cron-based sync schedules per org |
@@ -119,7 +150,8 @@ convex/                              # Convex backend
   auth.config.ts                     # Auth0 JWT verification config
   functions.ts                       # authenticatedQuery/Mutation builders
   users.ts                           # User CRUD + JIT provisioning
-  organizations.ts                   # Org CRUD + membership management
+  organizations.ts                   # Org CRUD + membership management + Auth0 org/role sync
+  auth0RoleMappings.ts               # Auth0 role ID cache + auto-create resolver
   invitations.ts                     # Invitation lifecycle
   apiCredentials.ts                  # Per-org API credential management
   integrationSchedules.ts            # Cron schedule management
@@ -133,7 +165,8 @@ convex/                              # Convex backend
   crons.ts                           # Cron job definitions
   validators.ts                      # Shared Convex validators
   lib/
-    auth.ts                          # Auth helpers (requireOrgMembership, etc.)
+    auth.ts                          # Auth helpers (requireOrgMembership, requireOrgOperator, etc.)
+    auth0Management.ts               # Auth0 Management API (M2M) — profile sync + RBAC role management
     mappers.ts                       # Server-side entity mappers
     rubicClient.ts                   # Rubic API client (server-side)
     tripletexClient.ts               # Tripletex API client (server-side)

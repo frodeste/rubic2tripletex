@@ -2,9 +2,9 @@
 
 import type { GenericActionCtx } from "convex/server";
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import type { DataModel, Id } from "./_generated/dataModel";
-import { action, internalAction } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import {
 	computeCustomerHash,
 	computeProductHash,
@@ -678,104 +678,6 @@ export const fetchDepartmentsFromTripletex = internalAction({
 });
 
 // =============================================================================
-// Public action wrappers — callable from the client, with auth checks.
-// Delegates to the internal implementation after verifying the caller.
+// Public action wrappers have been moved to convex/syncPublic.ts to avoid
+// TypeScript "Type instantiation is excessively deep" errors (TS2589).
 // =============================================================================
-
-/**
- * Verify the caller is authenticated and a member of the organization.
- * Works in action context (no ctx.db) by using ctx.runQuery.
- */
-async function requireAuthAndMembership(
-	ctx: Pick<GenericActionCtx<DataModel>, "auth" | "runQuery">,
-	organizationId: Id<"organizations">,
-) {
-	const identity = await ctx.auth.getUserIdentity();
-	if (!identity) {
-		throw new Error("Unauthenticated: you must be logged in to perform this action.");
-	}
-
-	// Fetch the Convex user record (JIT-provisioned on login).
-	// checkMembership requires a Convex userId, not the Auth0 subject string.
-	const user = await ctx.runQuery(api.users.current, {});
-	if (!user) {
-		throw new Error("User record not found. Please reload the page.");
-	}
-
-	const membership = await ctx.runQuery(internal.organizations.checkMembership, {
-		organizationId,
-		userId: user._id,
-	});
-	if (!membership) {
-		throw new Error("Forbidden: you are not a member of this organization.");
-	}
-	return { identity, user, membership };
-}
-
-const syncArgs = {
-	organizationId: v.id("organizations"),
-	tripletexEnv: tripletexEnvValidator,
-};
-
-export const runCustomersPublic = action({
-	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runCustomers, args);
-	},
-});
-
-export const runProductsPublic = action({
-	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runProducts, args);
-	},
-});
-
-export const runInvoicesPublic = action({
-	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runInvoices, args);
-	},
-});
-
-export const runPaymentsPublic = action({
-	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runPayments, args);
-	},
-});
-
-export const testConnectionPublic = action({
-	args: {
-		organizationId: v.id("organizations"),
-		provider: v.union(v.literal("rubic"), v.literal("tripletex")),
-		environment: tripletexEnvValidator,
-	},
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.testConnection, args);
-	},
-});
-
-export const fetchDepartmentsFromRubicPublic = action({
-	args: { organizationId: v.id("organizations") },
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.fetchDepartmentsFromRubic, args);
-	},
-});
-
-export const fetchDepartmentsFromTripletexPublic = action({
-	args: {
-		organizationId: v.id("organizations"),
-		tripletexEnv: tripletexEnvValidator,
-	},
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.fetchDepartmentsFromTripletex, args);
-	},
-});

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { requireOrgMembership } from "./lib/auth";
+import { requireOrgAdmin, requireOrgMembership } from "./lib/auth";
 import { validateBaseUrl } from "./lib/urlValidation";
 import { providerType, tripletexEnv } from "./validators";
 
@@ -58,7 +58,7 @@ export const getRubicCredentials = internalQuery({
 	},
 });
 
-/** Create or update API credentials (requires membership). */
+/** Create or update API credentials (requires admin). */
 export const upsert = mutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -69,7 +69,7 @@ export const upsert = mutation({
 		isEnabled: v.boolean(),
 	},
 	handler: async (ctx, args) => {
-		await requireOrgMembership(ctx, args.organizationId);
+		await requireOrgAdmin(ctx, args.organizationId);
 		validateBaseUrl(args.baseUrl, args.provider);
 
 		const existing = await ctx.db
@@ -102,14 +102,14 @@ export const upsert = mutation({
 	},
 });
 
-/** Delete API credentials (requires membership). */
+/** Delete API credentials (requires admin). */
 export const remove = mutation({
 	args: { credentialId: v.id("apiCredentials") },
 	handler: async (ctx, args) => {
-		// Look up the credential to find its org, then verify membership
+		// Look up the credential to find its org, then verify admin
 		const cred = await ctx.db.get(args.credentialId);
 		if (!cred) throw new Error("Credential not found");
-		await requireOrgMembership(ctx, cred.organizationId);
+		await requireOrgAdmin(ctx, cred.organizationId);
 
 		await ctx.db.delete(args.credentialId);
 	},

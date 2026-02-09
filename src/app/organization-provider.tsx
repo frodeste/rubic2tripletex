@@ -79,18 +79,20 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 	const value = useMemo(
 		() => ({
 			userId,
-			organizationId: selectedOrgId,
+			organizationId: isAuthenticated ? selectedOrgId : null,
 			organizationName: selectedOrg?.name ?? null,
 			auth0OrgId: selectedOrg?.auth0OrgId ?? null,
 			role: (selectedOrg && "role" in selectedOrg ? selectedOrg.role : null) as
 				| "owner"
 				| "admin"
 				| "member"
+				| "billing"
+				| "viewer"
 				| null,
 			setOrganizationId,
 			isLoading,
 		}),
-		[userId, selectedOrgId, selectedOrg, setOrganizationId, isLoading],
+		[userId, isAuthenticated, selectedOrgId, selectedOrg, setOrganizationId, isLoading],
 	);
 
 	return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;

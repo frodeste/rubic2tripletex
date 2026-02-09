@@ -116,12 +116,12 @@ function QuickSyncButton({
 	const [isRunning, setIsRunning] = useState(false);
 	const runSync = useAction(
 		syncType === "customers"
-			? api.sync.runCustomersPublic
+			? api.syncPublic.runCustomersPublic
 			: syncType === "products"
-				? api.sync.runProductsPublic
+				? api.syncPublic.runProductsPublic
 				: syncType === "invoices"
-					? api.sync.runInvoicesPublic
-					: api.sync.runPaymentsPublic,
+					? api.syncPublic.runInvoicesPublic
+					: api.syncPublic.runPaymentsPublic,
 	);
 
 	const config = syncTypeConfig[syncType];

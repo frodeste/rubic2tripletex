@@ -1,9 +1,11 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import {
 	Building2,
+	CreditCard,
 	Crown,
+	Eye,
 	Loader2,
 	Mail,
 	Settings,
@@ -43,35 +45,63 @@ import { getInitials } from "@/lib/utils";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
-function RoleBadge({ role }: { role: "owner" | "admin" | "member" }) {
-	if (role === "owner") {
-		return (
-			<Badge variant="default" className="gap-1">
-				<Crown className="h-3 w-3" />
-				Owner
-			</Badge>
-		);
+function RoleBadge({ role }: { role: "owner" | "admin" | "member" | "billing" | "viewer" }) {
+	switch (role) {
+		case "owner":
+			return (
+				<Badge variant="default" className="gap-1">
+					<Crown className="h-3 w-3" />
+					Owner
+				</Badge>
+			);
+		case "admin":
+			return (
+				<Badge variant="default" className="gap-1">
+					<Shield className="h-3 w-3" />
+					Admin
+				</Badge>
+			);
+		case "billing":
+			return (
+				<Badge variant="outline" className="gap-1">
+					<CreditCard className="h-3 w-3" />
+					Billing
+				</Badge>
+			);
+		case "viewer":
+			return (
+				<Badge variant="outline" className="gap-1">
+					<Eye className="h-3 w-3" />
+					Viewer
+				</Badge>
+			);
+		default:
+			return (
+				<Badge variant="secondary" className="gap-1">
+					<Users className="h-3 w-3" />
+					Member
+				</Badge>
+			);
 	}
-	if (role === "admin") {
-		return (
-			<Badge variant="default" className="gap-1">
-				<Shield className="h-3 w-3" />
-				Admin
-			</Badge>
-		);
-	}
-	return (
-		<Badge variant="secondary" className="gap-1">
-			<Users className="h-3 w-3" />
-			Member
-		</Badge>
-	);
 }
+
+type InvitableRole = "admin" | "member" | "billing" | "viewer";
+
+const INVITABLE_ROLES: { value: InvitableRole; label: string; description: string }[] = [
+	{ value: "member", label: "Member", description: "Can trigger syncs and manage mappings" },
+	{ value: "admin", label: "Admin", description: "Can manage members, settings, and credentials" },
+	{ value: "billing", label: "Billing", description: "Can manage billing and subscriptions" },
+	{
+		value: "viewer",
+		label: "Viewer",
+		description: "Read-only access to dashboard and sync history",
+	},
+];
 
 function InviteMemberDialog({ organizationId }: { organizationId: Id<"organizations"> }) {
 	const [open, setOpen] = useState(false);
 	const [email, setEmail] = useState("");
-	const [role, setRole] = useState<"admin" | "member">("member");
+	const [role, setRole] = useState<InvitableRole>("member");
 	const [saving, setSaving] = useState(false);
 
 	const createInvitation = useMutation(api.invitations.create);
@@ -122,17 +152,23 @@ function InviteMemberDialog({ organizationId }: { organizationId: Id<"organizati
 					</div>
 					<div className="space-y-2">
 						<Label>Role</Label>
-						<Select value={role} onValueChange={(v) => v && setRole(v as "admin" | "member")}>
+						<Select value={role} onValueChange={(v) => v && setRole(v as InvitableRole)}>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectPositioner>
 								<SelectContent>
-									<SelectItem value="member">Member</SelectItem>
-									<SelectItem value="admin">Admin</SelectItem>
+									{INVITABLE_ROLES.map((r) => (
+										<SelectItem key={r.value} value={r.value}>
+											{r.label}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</SelectPositioner>
 						</Select>
+						<p className="text-xs text-muted-foreground">
+							{INVITABLE_ROLES.find((r) => r.value === role)?.description}
+						</p>
 					</div>
 				</div>
 				<DialogFooter>
@@ -238,7 +274,7 @@ export default function OrganizationProfilePage() {
 		organizationId ? { organizationId } : "skip",
 	);
 
-	const removeMember = useMutation(api.organizations.removeMember);
+	const removeMember = useAction(api.organizations.removeMember);
 	const revokeInvitation = useMutation(api.invitations.revoke);
 
 	const isAdminOrOwner = role === "admin" || role === "owner";

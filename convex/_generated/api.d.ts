@@ -9,6 +9,7 @@
  */
 
 import type * as apiCredentials from "../apiCredentials.js";
+import type * as auth0RoleMappings from "../auth0RoleMappings.js";
 import type * as crons from "../crons.js";
 import type * as customerMapping from "../customerMapping.js";
 import type * as departmentMapping from "../departmentMapping.js";
@@ -26,6 +27,7 @@ import type * as organizations from "../organizations.js";
 import type * as productMapping from "../productMapping.js";
 import type * as scheduler from "../scheduler.js";
 import type * as sync from "../sync.js";
+import type * as syncPublic from "../syncPublic.js";
 import type * as syncState from "../syncState.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
@@ -38,6 +40,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   apiCredentials: typeof apiCredentials;
+  auth0RoleMappings: typeof auth0RoleMappings;
   crons: typeof crons;
   customerMapping: typeof customerMapping;
   departmentMapping: typeof departmentMapping;
@@ -55,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   productMapping: typeof productMapping;
   scheduler: typeof scheduler;
   sync: typeof sync;
+  syncPublic: typeof syncPublic;
   syncState: typeof syncState;
   users: typeof users;
   validators: typeof validators;

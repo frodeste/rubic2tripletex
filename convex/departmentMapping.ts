@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireOrgMembership } from "./lib/auth";
+import { requireOrgMembership, requireOrgOperator } from "./lib/auth";
 import { tripletexEnv } from "./validators";
 
 /** List department mappings for an org and environment (requires membership). */
@@ -28,7 +28,7 @@ export const list = query({
 	},
 });
 
-/** Create or update a department mapping (requires membership). */
+/** Create or update a department mapping (requires operator). */
 export const upsert = mutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -39,7 +39,7 @@ export const upsert = mutation({
 		tripletexEnv: tripletexEnv,
 	},
 	handler: async (ctx, args) => {
-		await requireOrgMembership(ctx, args.organizationId);
+		await requireOrgOperator(ctx, args.organizationId);
 
 		const existing = await ctx.db
 			.query("departmentMapping")
@@ -71,13 +71,13 @@ export const upsert = mutation({
 	},
 });
 
-/** Remove a department mapping (requires membership). */
+/** Remove a department mapping (requires operator). */
 export const remove = mutation({
 	args: { departmentMappingId: v.id("departmentMapping") },
 	handler: async (ctx, args) => {
 		const mapping = await ctx.db.get(args.departmentMappingId);
 		if (!mapping) throw new Error("Department mapping not found");
-		await requireOrgMembership(ctx, mapping.organizationId);
+		await requireOrgOperator(ctx, mapping.organizationId);
 
 		await ctx.db.delete(args.departmentMappingId);
 	},

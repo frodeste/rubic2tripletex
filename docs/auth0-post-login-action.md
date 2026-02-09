@@ -190,8 +190,13 @@ In the Action's sidebar, add these secrets:
 | --- | --- |
 | `CONVEX_HTTP_URL` | Your Convex HTTP Actions URL (e.g. `https://friendly-finch-466.eu-west-1.convex.site`) |
 | `AUTH0_ACTION_SECRET` | The same secret from Step 3 |
+| `AUTH0_DOMAIN` | Your Auth0 tenant domain (e.g. `uniteperformance.eu.auth0.com`) |
+| `MGMT_CLIENT_ID` | M2M application client ID (for fetching org roles) |
+| `MGMT_CLIENT_SECRET` | M2M application client secret |
 
 > **Note:** The HTTP Actions URL ends in `.convex.site` (not `.convex.cloud`). Find it in the Convex Dashboard → Deployment → HTTP Actions.
+>
+> The M2M secrets are the same ones used in Convex environment variables (`AUTH0_M2M_CLIENT_ID` / `AUTH0_M2M_CLIENT_SECRET`). They enable the Action to read the user's organization roles and inject them as custom claims in the ID token.
 
 ### Action Code
 
@@ -250,13 +255,47 @@ exports.onExecutePostLogin = async (event, api) => {
     // Don't block login — fail open, client-side handles it
   }
 
-  // Optional: Set custom claims on the ID token
-  // Uncomment and adapt if you want org context in the token:
-  //
-  // if (event.organization) {
-  //   api.idToken.setCustomClaim("org_id", event.organization.id);
-  //   api.idToken.setCustomClaim("org_name", event.organization.display_name);
-  // }
+  // Set organization roles as custom claims on the ID token (Auth0 RBAC).
+  // This enables the client to read the user's role without a Convex query,
+  // and supports future JWT-based role checks in Convex.
+  if (event.organization) {
+    const namespace = "https://rubic2tripletex.app";
+    api.idToken.setCustomClaim(`${namespace}/org_id`, event.organization.id);
+    api.idToken.setCustomClaim(
+      `${namespace}/org_name`,
+      event.organization.display_name
+    );
+
+    // Fetch org roles via Management API (requires M2M secrets below)
+    try {
+      const mgmtResponse = await fetch(
+        `https://${event.secrets.AUTH0_DOMAIN}/oauth/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            grant_type: "client_credentials",
+            client_id: event.secrets.MGMT_CLIENT_ID,
+            client_secret: event.secrets.MGMT_CLIENT_SECRET,
+            audience: `https://${event.secrets.AUTH0_DOMAIN}/api/v2/`,
+          }),
+        }
+      );
+      const { access_token } = await mgmtResponse.json();
+
+      const rolesResponse = await fetch(
+        `https://${event.secrets.AUTH0_DOMAIN}/api/v2/organizations/${event.organization.id}/members/${event.user.user_id}/roles`,
+        { headers: { Authorization: `Bearer ${access_token}` } }
+      );
+      const roles = await rolesResponse.json();
+      const roleNames = roles.map((r) => r.name);
+
+      api.idToken.setCustomClaim(`${namespace}/roles`, roleNames);
+    } catch (err) {
+      console.error("Failed to fetch org roles:", err.message);
+      // Don't block login — roles will be read from Convex membership cache
+    }
+  }
 };
 ```
 
@@ -352,8 +391,9 @@ This two-layer approach (server-side Action + client-side hook) ensures resilien
 
 This Action respects the project's SoT model:
 
-- **Auth0 owns**: authentication credentials, SSO/MFA config, authentication tokens
-- **Convex owns**: user application records, organizations, memberships, roles, invitations, preferences, all business data
-- **The Action only syncs minimal identity facts** (email, name, avatar) from Auth0 to Convex — it does not write business data to Auth0
+- **Auth0 owns**: authentication credentials, SSO/MFA config, authentication tokens, **organization role assignments (RBAC)**
+- **Convex owns**: user application records, organizations, invitations, preferences, all business data
+- **Memberships**: Dual-write — Auth0 Organization membership is canonical; Convex `memberships` table is a synced cache for fast queries
+- **The Action syncs identity facts** (email, name, avatar) from Auth0 to Convex and **injects organization roles** as custom claims in the ID token
 
-The `users.upsertFromAuth0` mutation only updates `lastActiveAt`, `name`, and `avatarUrl`. It never writes credentials, roles, or org data — those are managed exclusively by Convex mutations through the application UI.
+The `users.upsertFromAuth0` mutation only updates `lastActiveAt`, `name`, and `avatarUrl`. Role assignments are managed via Auth0 Organization Roles and synced to Convex when members are added/removed through the application UI (see `convex/organizations.ts` and `convex/invitations.ts`).
