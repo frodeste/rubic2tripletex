@@ -21,7 +21,10 @@ git config --global diff.colorMoved zebra
 # Zsh Plugins (fallback if devcontainer feature didn't install them)
 # ==============================================================================
 echo "Checking zsh plugins..."
-bash "$SCRIPT_DIR/zsh-setup.sh"
+if ! bash "$SCRIPT_DIR/zsh-setup.sh"; then
+    echo "[post-create] Warning: Failed to set up zsh plugins." >&2
+    echo "[post-create] Zsh plugins are optional — continuing with the rest of setup." >&2
+fi
 
 # ==============================================================================
 # Zsh Configuration
