@@ -60,7 +60,7 @@ function RubicCredentialForm() {
 	} | null>(null);
 
 	const upsertCredentials = useMutation(api.apiCredentials.upsert);
-	const testConnection = useAction(api.sync.testConnectionPublic);
+	const testConnection = useAction(api.syncPublic.testConnectionPublic);
 
 	const parsedOrgId = Number.parseInt(organizationIdField, 10);
 	const isOrgIdValid = organizationIdField.trim() !== "" && !Number.isNaN(parsedOrgId);
@@ -219,7 +219,7 @@ function TripletexCredentialForm({ defaultEnv }: { defaultEnv: "sandbox" | "prod
 	} | null>(null);
 
 	const upsertCredentials = useMutation(api.apiCredentials.upsert);
-	const testConnection = useAction(api.sync.testConnectionPublic);
+	const testConnection = useAction(api.syncPublic.testConnectionPublic);
 
 	const handleSave = async () => {
 		if (!organizationId) return;
