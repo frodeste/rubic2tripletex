@@ -158,7 +158,7 @@ function InviteMemberDialog({ organizationId }: { organizationId: Id<"organizati
 									{INVITABLE_ROLES.find((r) => r.value === role)?.label ?? role}
 								</SelectValue>
 							</SelectTrigger>
-							<SelectPositioner>
+							<SelectPositioner portal={false}>
 								<SelectContent>
 									{INVITABLE_ROLES.map((r) => (
 										<SelectItem key={r.value} value={r.value}>
