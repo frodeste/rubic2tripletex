@@ -23,3 +23,16 @@ export function getInitials(name?: string | null, email?: string | null): string
 	}
 	return "U";
 }
+
+/**
+ * URL for the Auth0 logout endpoint. Uses an absolute returnTo when
+ * NEXT_PUBLIC_APP_URL is set so Auth0 redirects back to the app's login page.
+ */
+export function getLogoutHref(): string {
+	const base = process.env.NEXT_PUBLIC_APP_URL;
+	if (base) {
+		const returnTo = `${base.replace(/\/$/, "")}/login`;
+		return `/auth/logout?returnTo=${encodeURIComponent(returnTo)}`;
+	}
+	return "/auth/logout?returnTo=/login";
+}

@@ -35,7 +35,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
-import { getInitials } from "@/lib/utils";
+import { getInitials, getLogoutHref } from "@/lib/utils";
 
 const navItems = [
 	{
@@ -138,7 +138,7 @@ export function AppSidebar() {
 							<DropdownMenuPositioner side="top" align="end">
 								<DropdownMenuContent className="min-w-40 rounded-lg">
 									{/* biome-ignore lint/a11y/useAnchorContent: Content provided by DropdownMenuItem's render prop */}
-									<DropdownMenuItem className="gap-2" render={<a href="/auth/logout" />}>
+									<DropdownMenuItem className="gap-2" render={<a href={getLogoutHref()} />}>
 										<LogOut className="size-4" />
 										<span>Log out</span>
 									</DropdownMenuItem>

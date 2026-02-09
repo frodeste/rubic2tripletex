@@ -2,7 +2,7 @@
 
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAction, useQuery } from "convex/react";
-import { Loader2, Mail, Pencil, Save, Settings, Shield, User, X } from "lucide-react";
+import { Loader2, LogOut, Mail, Pencil, Save, Settings, Shield, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/use-organization";
-import { getInitials } from "@/lib/utils";
+import { getInitials, getLogoutHref } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 
 export default function ProfilePage() {
@@ -288,11 +288,18 @@ export default function ProfilePage() {
 							<CardTitle>Security</CardTitle>
 							<CardDescription>Manage your security settings</CardDescription>
 						</CardHeader>
-						<CardContent>
+						<CardContent className="space-y-4">
 							<p className="text-sm text-muted-foreground">
 								MFA and security settings are managed by Auth0. Visit your identity provider to
 								update password, enable MFA, or manage connected accounts.
 							</p>
+							<div className="pt-2">
+								{/* biome-ignore lint/a11y/useAnchorContent: Content provided by Button's render prop */}
+								<Button variant="outline" className="gap-2" render={<a href={getLogoutHref()} />}>
+									<LogOut className="h-4 w-4" />
+									Log out
+								</Button>
+							</div>
 						</CardContent>
 					</Card>
 				</TabsContent>

@@ -68,7 +68,7 @@ All variables are documented in `.env.example`. Key groups:
 | Group | Variables |
 | --- | --- |
 | Convex | `NEXT_PUBLIC_CONVEX_URL`, `CONVEX_DEPLOY_KEY` |
-| Auth0 | `AUTH0_SECRET`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `APP_BASE_URL`, `AUTH0_BASE_URL`, `AUTH0_ISSUER_BASE_URL`, `NEXT_PUBLIC_AUTH0_DOMAIN`, `NEXT_PUBLIC_AUTH0_CLIENT_ID` |
+| Auth0 | `AUTH0_SECRET`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `APP_BASE_URL`, `AUTH0_BASE_URL`, `AUTH0_ISSUER_BASE_URL`, `NEXT_PUBLIC_AUTH0_DOMAIN`, `NEXT_PUBLIC_AUTH0_CLIENT_ID`, `NEXT_PUBLIC_APP_URL` (optional, for absolute logout return URL) |
 | Sentry | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` |
 
 > **Note:** Rubic and Tripletex API credentials are managed per-organization in the app's Settings page and stored in Convex — they are not environment variables.
@@ -133,7 +133,10 @@ Use the dashboard to:
 
 1. An Auth0 tenant with a **Regular Web Application** configured
 2. An **API** in Auth0 with identifier matching your Convex deployment URL
-3. Callback URLs configured for `http://localhost:3000` (dev) and your production domain
+3. **Allowed Callback URLs**: e.g. `http://localhost:3000/auth/callback` (dev) and `https://<your-domain>/auth/callback` (production)
+4. **Allowed Logout URLs**: e.g. `http://localhost:3000`, `http://localhost:3000/login` (dev) and your production origin + `/login` so users return to the app login page after signing out.
+
+Set `NEXT_PUBLIC_APP_URL` to your app’s public origin (e.g. `https://integration.uniteperformance.no` or `http://localhost:3000` in dev) so logout uses an absolute `returnTo` and Auth0 redirects back to your app instead of a relative path.
 
 ### Convex Auth Config
 
