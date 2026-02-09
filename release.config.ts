@@ -1,3 +1,5 @@
+import type { Options } from "semantic-release";
+
 /**
  * Semantic Release configuration
  *
@@ -7,7 +9,7 @@
  *
  * @see https://semantic-release.gitbook.io/semantic-release/usage/configuration
  */
-export default {
+const config: Options = {
 	branches: ["main"],
 	plugins: [
 		[
@@ -21,7 +23,12 @@ export default {
 			{
 				preset: "conventionalcommits",
 				writerOpts: {
-					transform: (commit, context) => {
+					transform: (
+						commit: Record<string, unknown> & {
+							authorName?: string;
+							notes?: Array<{ title: string }>;
+						},
+					) => {
 						// Add author name to commit for richer release notes
 						if (commit.authorName) {
 							commit.user = commit.authorName;
@@ -47,3 +54,5 @@ export default {
 		"@semantic-release/github",
 	],
 };
+
+export default config;
