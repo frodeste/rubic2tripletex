@@ -1,5 +1,15 @@
 import type { GenericQueryCtx } from "convex/server";
 import type { DataModel, Id } from "../_generated/dataModel";
+import type { MemberRole } from "../validators";
+
+/** Roles that can perform operational actions (trigger syncs, manage mappings/schedules). */
+const OPERATOR_ROLES: MemberRole[] = ["member", "admin", "owner"];
+
+/** Roles with administrative privileges (manage members, credentials, org settings). */
+const ADMIN_ROLES: MemberRole[] = ["admin", "owner"];
+
+/** Roles that can manage billing (future). */
+const BILLING_ROLES: MemberRole[] = ["billing", "admin", "owner"];
 
 /**
  * Verify the caller is authenticated and return their identity.
@@ -46,6 +56,7 @@ export async function getCurrentUserOrThrow(ctx: {
 
 /**
  * Verify the caller is authenticated AND is a member of the specified organization.
+ * Any role (including viewer and billing) passes this check.
  * Returns { identity, user, membership } on success.
  */
 export async function requireOrgMembership(
@@ -70,6 +81,24 @@ export async function requireOrgMembership(
 }
 
 /**
+ * Verify the caller has an operational role (member, admin, or owner).
+ * Blocks viewer and billing roles from performing sync/write operations.
+ * Returns { identity, user, membership } on success.
+ */
+export async function requireOrgOperator(
+	ctx: { auth: GenericQueryCtx<DataModel>["auth"]; db: GenericQueryCtx<DataModel>["db"] },
+	organizationId: Id<"organizations">,
+) {
+	const { identity, user, membership } = await requireOrgMembership(ctx, organizationId);
+
+	if (!OPERATOR_ROLES.includes(membership.role)) {
+		throw new Error("Forbidden: you need at least member-level access to perform this action.");
+	}
+
+	return { identity, user, membership };
+}
+
+/**
  * Verify the caller is an admin (or owner) of the specified organization.
  * Returns { identity, user, membership } on success.
  */
@@ -79,8 +108,25 @@ export async function requireOrgAdmin(
 ) {
 	const { identity, user, membership } = await requireOrgMembership(ctx, organizationId);
 
-	if (membership.role !== "admin" && membership.role !== "owner") {
+	if (!ADMIN_ROLES.includes(membership.role)) {
 		throw new Error("Forbidden: you must be an admin of this organization.");
+	}
+
+	return { identity, user, membership };
+}
+
+/**
+ * Verify the caller can manage billing (billing, admin, or owner).
+ * Returns { identity, user, membership } on success.
+ */
+export async function requireOrgBilling(
+	ctx: { auth: GenericQueryCtx<DataModel>["auth"]; db: GenericQueryCtx<DataModel>["db"] },
+	organizationId: Id<"organizations">,
+) {
+	const { identity, user, membership } = await requireOrgMembership(ctx, organizationId);
+
+	if (!BILLING_ROLES.includes(membership.role)) {
+		throw new Error("Forbidden: you need billing access to perform this action.");
 	}
 
 	return { identity, user, membership };

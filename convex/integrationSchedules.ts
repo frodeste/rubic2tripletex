@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { requireOrgMembership } from "./lib/auth";
+import { requireOrgMembership, requireOrgOperator } from "./lib/auth";
 import { syncType, tripletexEnv } from "./validators";
 
 /** List schedules for an organization (requires membership). */
@@ -26,7 +26,7 @@ export const listEnabled = internalQuery({
 	},
 });
 
-/** Create or update an integration schedule (requires membership). */
+/** Create or update an integration schedule (requires operator). */
 export const upsert = mutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -36,7 +36,7 @@ export const upsert = mutation({
 		isEnabled: v.boolean(),
 	},
 	handler: async (ctx, args) => {
-		await requireOrgMembership(ctx, args.organizationId);
+		await requireOrgOperator(ctx, args.organizationId);
 
 		// Find existing schedule for this org + type + env
 		const schedules = await ctx.db

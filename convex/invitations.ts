@@ -2,9 +2,25 @@ import { v } from "convex/values";
 
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
+import { internal } from "./_generated/api";
+import { action } from "./_generated/server";
 import { authenticatedMutation, authenticatedQuery } from "./functions";
 import { requireOrgAdmin, requireOrgMembership } from "./lib/auth";
+import { addAuth0OrgMember, assignAuth0OrgRoles } from "./lib/auth0Management";
+import type { MemberRole } from "./validators";
 import { memberRole } from "./validators";
+
+/**
+ * Extract the Auth0 user ID (subject) from a Convex tokenIdentifier.
+ * Format: "https://domain/|auth0|user123" → "auth0|user123"
+ */
+function extractAuth0UserId(tokenIdentifier: string): string {
+	const firstPipe = tokenIdentifier.indexOf("|");
+	if (firstPipe === -1) {
+		throw new Error(`Invalid tokenIdentifier format: ${tokenIdentifier}`);
+	}
+	return tokenIdentifier.substring(firstPipe + 1);
+}
 
 /**
  * Create a new invitation for an organization.
@@ -97,7 +113,7 @@ export const listForOrg = authenticatedQuery({
 
 /**
  * Accept an invitation by token.
- * Creates a membership if the user is not already a member.
+ * Creates a membership in Convex, then syncs to Auth0 (best-effort).
  */
 export const accept = authenticatedMutation({
 	args: {
@@ -140,12 +156,19 @@ export const accept = authenticatedMutation({
 			.unique();
 
 		if (!existingMembership) {
-			// Create membership
+			// Create membership in Convex
 			await ctx.db.insert("memberships", {
 				organizationId: invitation.organizationId,
 				userId: ctx.user._id,
 				role: invitation.role,
 				joinedAt: Date.now(),
+			});
+
+			// Schedule Auth0 sync (best-effort, runs as a separate action)
+			await ctx.scheduler.runAfter(0, internal.invitations.syncAcceptedMemberToAuth0, {
+				organizationId: invitation.organizationId,
+				userId: ctx.user._id,
+				role: invitation.role,
 			});
 		}
 
@@ -183,5 +206,44 @@ export const revoke = authenticatedMutation({
 		await ctx.db.patch(args.invitationId, {
 			status: "revoked",
 		});
+	},
+});
+
+// ---------------------------------------------------------------------------
+// Internal: Auth0 sync for accepted invitations
+// ---------------------------------------------------------------------------
+
+/**
+ * Sync a newly accepted membership to Auth0 Organization.
+ * This runs as a scheduled action after the invitation is accepted,
+ * so the mutation completes immediately and Auth0 sync is best-effort.
+ */
+export const syncAcceptedMemberToAuth0 = action({
+	args: {
+		organizationId: v.id("organizations"),
+		userId: v.id("users"),
+		role: memberRole,
+	},
+	handler: async (ctx, args) => {
+		const user = await ctx.runQuery(internal.organizations.getUserById, {
+			userId: args.userId,
+		});
+		const org = await ctx.runQuery(internal.organizations.getOrgById, {
+			organizationId: args.organizationId,
+		});
+
+		if (!user || !org?.auth0OrgId) {
+			// No Auth0 org linked — skip sync
+			return;
+		}
+
+		const auth0UserId = extractAuth0UserId(user.tokenIdentifier);
+
+		try {
+			await addAuth0OrgMember(org.auth0OrgId, auth0UserId);
+			await assignAuth0OrgRoles(org.auth0OrgId, auth0UserId, [args.role as MemberRole]);
+		} catch (error) {
+			console.error("Failed to sync accepted invitation to Auth0:", error);
+		}
 	},
 });

@@ -682,6 +682,9 @@ export const fetchDepartmentsFromTripletex = internalAction({
 // Delegates to the internal implementation after verifying the caller.
 // =============================================================================
 
+/** Roles that can perform operational actions (trigger syncs, manage mappings/schedules). */
+const OPERATOR_ROLES = ["member", "admin", "owner"];
+
 /**
  * Verify the caller is authenticated and a member of the organization.
  * Works in action context (no ctx.db) by using ctx.runQuery.
@@ -712,6 +715,21 @@ async function requireAuthAndMembership(
 	return { identity, user, membership };
 }
 
+/**
+ * Verify the caller is authenticated and has operator-level access.
+ * Blocks viewer and billing roles from triggering sync operations.
+ */
+async function requireAuthAndOperator(
+	ctx: Pick<GenericActionCtx<DataModel>, "auth" | "runQuery">,
+	organizationId: Id<"organizations">,
+) {
+	const result = await requireAuthAndMembership(ctx, organizationId);
+	if (!OPERATOR_ROLES.includes(result.membership.role)) {
+		throw new Error("Forbidden: you need at least member-level access to perform this action.");
+	}
+	return result;
+}
+
 const syncArgs = {
 	organizationId: v.id("organizations"),
 	tripletexEnv: tripletexEnvValidator,
@@ -720,7 +738,7 @@ const syncArgs = {
 export const runCustomersPublic = action({
 	args: syncArgs,
 	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
+		await requireAuthAndOperator(ctx, args.organizationId);
 		return ctx.runAction(internal.sync.runCustomers, args);
 	},
 });
@@ -728,7 +746,7 @@ export const runCustomersPublic = action({
 export const runProductsPublic = action({
 	args: syncArgs,
 	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
+		await requireAuthAndOperator(ctx, args.organizationId);
 		return ctx.runAction(internal.sync.runProducts, args);
 	},
 });
@@ -736,7 +754,7 @@ export const runProductsPublic = action({
 export const runInvoicesPublic = action({
 	args: syncArgs,
 	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
+		await requireAuthAndOperator(ctx, args.organizationId);
 		return ctx.runAction(internal.sync.runInvoices, args);
 	},
 });
@@ -744,7 +762,7 @@ export const runInvoicesPublic = action({
 export const runPaymentsPublic = action({
 	args: syncArgs,
 	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
+		await requireAuthAndOperator(ctx, args.organizationId);
 		return ctx.runAction(internal.sync.runPayments, args);
 	},
 });
@@ -756,7 +774,7 @@ export const testConnectionPublic = action({
 		environment: tripletexEnvValidator,
 	},
 	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
+		await requireAuthAndOperator(ctx, args.organizationId);
 		return ctx.runAction(internal.sync.testConnection, args);
 	},
 });

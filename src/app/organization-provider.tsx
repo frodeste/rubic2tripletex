@@ -86,6 +86,8 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 				| "owner"
 				| "admin"
 				| "member"
+				| "billing"
+				| "viewer"
 				| null,
 			setOrganizationId,
 			isLoading,
