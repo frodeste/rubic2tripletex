@@ -27,7 +27,6 @@ import type * as productMapping from "../productMapping.js";
 import type * as scheduler from "../scheduler.js";
 import type * as sync from "../sync.js";
 import type * as syncPublic from "../syncPublic.js";
-import type * as syncPublicFetch from "../syncPublicFetch.js";
 import type * as syncState from "../syncState.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
@@ -58,7 +57,6 @@ declare const fullApi: ApiFromModules<{
   scheduler: typeof scheduler;
   sync: typeof sync;
   syncPublic: typeof syncPublic;
-  syncPublicFetch: typeof syncPublicFetch;
   syncState: typeof syncState;
   users: typeof users;
   validators: typeof validators;

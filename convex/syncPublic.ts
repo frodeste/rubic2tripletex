@@ -6,8 +6,9 @@
  * These are callable from the client and delegate to the internal sync
  * implementations after verifying the caller's authentication and role.
  *
- * Extracted from convex/sync.ts to avoid TypeScript TS2589 "Type instantiation
- * is excessively deep" errors caused by too many action() definitions in one file.
+ * Handlers are pre-typed with explicit `ActionCtx` to avoid TypeScript
+ * TS2589 "Type instantiation is excessively deep" errors that occur when
+ * the `action()` generic infers handler types through the large DataModel.
  */
 
 import type { GenericActionCtx } from "convex/server";
@@ -15,6 +16,7 @@ import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import type { DataModel, Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
+import type { ActionCtx } from "./_generated/server";
 import { tripletexEnv as tripletexEnvValidator } from "./validators";
 
 // ---------------------------------------------------------------------------
@@ -68,6 +70,64 @@ async function requireAuthAndOperator(
 }
 
 // ---------------------------------------------------------------------------
+// Pre-typed handler argument interfaces
+// ---------------------------------------------------------------------------
+
+interface SyncArgs {
+	organizationId: Id<"organizations">;
+	tripletexEnv: "sandbox" | "production";
+}
+
+interface TestConnectionArgs {
+	organizationId: Id<"organizations">;
+	provider: "rubic" | "tripletex";
+	environment: "sandbox" | "production";
+}
+
+interface OrgOnlyArgs {
+	organizationId: Id<"organizations">;
+}
+
+// ---------------------------------------------------------------------------
+// Pre-typed handlers (explicit ActionCtx avoids deep type inference in action())
+// ---------------------------------------------------------------------------
+
+const runCustomersHandler = async (ctx: ActionCtx, args: SyncArgs) => {
+	await requireAuthAndOperator(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.runCustomers, args);
+};
+
+const runProductsHandler = async (ctx: ActionCtx, args: SyncArgs) => {
+	await requireAuthAndOperator(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.runProducts, args);
+};
+
+const runInvoicesHandler = async (ctx: ActionCtx, args: SyncArgs) => {
+	await requireAuthAndOperator(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.runInvoices, args);
+};
+
+const runPaymentsHandler = async (ctx: ActionCtx, args: SyncArgs) => {
+	await requireAuthAndOperator(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.runPayments, args);
+};
+
+const testConnectionHandler = async (ctx: ActionCtx, args: TestConnectionArgs) => {
+	await requireAuthAndOperator(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.testConnection, args);
+};
+
+const fetchDepartmentsFromRubicHandler = async (ctx: ActionCtx, args: OrgOnlyArgs) => {
+	await requireAuthAndMembership(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.fetchDepartmentsFromRubic, args);
+};
+
+const fetchDepartmentsFromTripletexHandler = async (ctx: ActionCtx, args: SyncArgs) => {
+	await requireAuthAndMembership(ctx, args.organizationId);
+	return ctx.runAction(internal.sync.fetchDepartmentsFromTripletex, args);
+};
+
+// ---------------------------------------------------------------------------
 // Public sync actions (require operator role)
 // ---------------------------------------------------------------------------
 
@@ -78,34 +138,22 @@ const syncArgs = {
 
 export const runCustomersPublic = action({
 	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndOperator(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runCustomers, args);
-	},
+	handler: runCustomersHandler,
 });
 
 export const runProductsPublic = action({
 	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndOperator(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runProducts, args);
-	},
+	handler: runProductsHandler,
 });
 
 export const runInvoicesPublic = action({
 	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndOperator(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runInvoices, args);
-	},
+	handler: runInvoicesHandler,
 });
 
 export const runPaymentsPublic = action({
 	args: syncArgs,
-	handler: async (ctx, args) => {
-		await requireAuthAndOperator(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.runPayments, args);
-	},
+	handler: runPaymentsHandler,
 });
 
 export const testConnectionPublic = action({
@@ -114,11 +162,22 @@ export const testConnectionPublic = action({
 		provider: v.union(v.literal("rubic"), v.literal("tripletex")),
 		environment: tripletexEnvValidator,
 	},
-	handler: async (ctx, args) => {
-		await requireAuthAndOperator(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.testConnection, args);
-	},
+	handler: testConnectionHandler,
 });
 
-// Public fetch actions (department lookups) are in convex/syncPublicFetch.ts
-// to keep each file under the TypeScript type instantiation depth limit.
+// ---------------------------------------------------------------------------
+// Public fetch actions (require membership — viewers can read)
+// ---------------------------------------------------------------------------
+
+export const fetchDepartmentsFromRubicPublic = action({
+	args: { organizationId: v.id("organizations") },
+	handler: fetchDepartmentsFromRubicHandler,
+});
+
+export const fetchDepartmentsFromTripletexPublic = action({
+	args: {
+		organizationId: v.id("organizations"),
+		tripletexEnv: tripletexEnvValidator,
+	},
+	handler: fetchDepartmentsFromTripletexHandler,
+});
