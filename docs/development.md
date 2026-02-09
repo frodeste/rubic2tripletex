@@ -80,8 +80,13 @@ Some variables must be set in the **Convex Dashboard** (Settings → Environment
 | Variable | Purpose |
 | --- | --- |
 | `AUTH0_ACTION_SECRET` | Shared secret for the Auth0 Post-Login Action HTTP endpoint |
+| `AUTH0_DOMAIN` | Auth0 tenant URL (e.g. `https://your-tenant.eu.auth0.com`) |
+| `AUTH0_M2M_CLIENT_ID` | M2M application Client ID for Auth0 Management API |
+| `AUTH0_M2M_CLIENT_SECRET` | M2M application Client Secret |
 
-See [Auth0 Post-Login Action Guide](./auth0-post-login-action.md) for details.
+The M2M credentials enable Convex to auto-create Auth0 Organizations and Roles, and sync membership/role changes. Without them, Convex operates standalone (Auth0 sync is silently skipped).
+
+See [Auth0 Post-Login Action Guide](./auth0-post-login-action.md) and the [README Auth0 M2M Setup](../README.md#auth0-m2m-setup) for details.
 
 ## Convex Development
 

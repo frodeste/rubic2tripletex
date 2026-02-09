@@ -21,18 +21,18 @@ graph LR
 | --- | --- | --- |
 | **Authentication** | Auth0 | Credentials, SSO/MFA, login/logout, ID tokens |
 | **Identity facts** | Auth0 (read-only) | `sub`, `email`, `name`, `picture` — synced to Convex on login |
-| **Organizations** | Convex | Name, slug, settings, creation, deletion |
-| **Role assignments** | Auth0 (RBAC) | Auth0 Organization Roles are the source of truth; Convex memberships are a synced cache |
-| **Memberships** | Dual-write | Convex `memberships` table is the fast query cache; Auth0 Organization membership is the canonical source |
+| **Organizations** | Convex | Name, slug, settings, creation, deletion; Auth0 Organization auto-created via M2M |
+| **Role assignments** | Convex | Convex `memberships.role` is the source of truth; synced to Auth0 Organization Roles via M2M (best-effort) |
+| **Memberships** | Convex | Convex `memberships` table is the source of truth; synced to Auth0 Organization membership via M2M (best-effort) |
 | **Invitations** | Convex | Invite lifecycle: create, accept, revoke, expire (synced to Auth0 on acceptance) |
 | **User app data** | Convex | Preferences, `lastActiveAt`, feature flags, audit trails |
 | **Business data** | Convex | API credentials, sync state, mappings, schedules |
 
-**Rule:** Auth0 owns role assignments via its RBAC system. When roles or memberships change, the app writes to Auth0 first (best-effort), then updates the Convex cache. Convex remains the single source of truth for all business data.
+**Rule:** Convex owns all organization, membership, and role data. Changes are written to Convex first, then synced to Auth0 via M2M (best-effort). Auth0 failures never block Convex operations. Auth0 roles are auto-created on demand and their IDs are cached in the `auth0RoleMappings` table.
 
-## Roles (Auth0 RBAC)
+## Roles
 
-Five roles are defined in Auth0 and assigned per-organization:
+Five roles are defined in Convex and assigned per-organization via the `memberships` table. Auth0 roles are auto-created via M2M on first use and their IDs are cached in the `auth0RoleMappings` table:
 
 | Role | Purpose | Key permissions |
 | --- | --- | --- |
@@ -131,7 +131,8 @@ Key tables (see `convex/schema.ts` for full definitions):
 | --- | --- |
 | `users` | JIT-provisioned from Auth0, keyed by `tokenIdentifier` |
 | `organizations` | Tenant entities with name, slug, optional `auth0OrgId` |
-| `memberships` | User-org relationships with `owner`/`admin`/`member`/`billing`/`viewer` roles (synced from Auth0 RBAC) |
+| `memberships` | User-org relationships with `owner`/`admin`/`member`/`billing`/`viewer` roles (source of truth, synced to Auth0) |
+| `auth0RoleMappings` | Persistent cache of Convex role name → Auth0 role ID mappings (auto-created on demand) |
 | `invitations` | Invitation lifecycle (pending → accepted/expired/revoked) |
 | `apiCredentials` | Per-org, per-provider, per-environment API keys |
 | `integrationSchedules` | Cron-based sync schedules per org |
@@ -149,7 +150,8 @@ convex/                              # Convex backend
   auth.config.ts                     # Auth0 JWT verification config
   functions.ts                       # authenticatedQuery/Mutation builders
   users.ts                           # User CRUD + JIT provisioning
-  organizations.ts                   # Org CRUD + membership management
+  organizations.ts                   # Org CRUD + membership management + Auth0 org/role sync
+  auth0RoleMappings.ts               # Auth0 role ID cache + auto-create resolver
   invitations.ts                     # Invitation lifecycle
   apiCredentials.ts                  # Per-org API credential management
   integrationSchedules.ts            # Cron schedule management

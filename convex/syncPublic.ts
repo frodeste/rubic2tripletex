@@ -15,8 +15,8 @@ import type { GenericActionCtx } from "convex/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import type { DataModel, Id } from "./_generated/dataModel";
-import { action } from "./_generated/server";
 import type { ActionCtx } from "./_generated/server";
+import { action } from "./_generated/server";
 import { tripletexEnv as tripletexEnvValidator } from "./validators";
 
 // ---------------------------------------------------------------------------
@@ -174,9 +174,6 @@ export const fetchDepartmentsFromRubicPublic = action({
 	handler: fetchDepartmentsFromRubicHandler,
 });
 
-// @ts-ignore TS2589 — cumulative type instantiation depth from 7 action()
-// registrations in one file exceeds TypeScript's limit. Handler is pre-typed
-// with ActionCtx above, so runtime type safety is maintained.
 export const fetchDepartmentsFromTripletexPublic = action({
 	args: {
 		organizationId: v.id("organizations"),

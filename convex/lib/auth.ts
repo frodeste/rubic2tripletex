@@ -131,3 +131,15 @@ export async function requireOrgBilling(
 
 	return { identity, user, membership };
 }
+
+/**
+ * Extract the Auth0 user ID (subject) from a Convex tokenIdentifier.
+ * Format: "https://domain/|auth0|user123" → "auth0|user123"
+ */
+export function extractAuth0UserId(tokenIdentifier: string): string {
+	const firstPipe = tokenIdentifier.indexOf("|");
+	if (firstPipe === -1) {
+		throw new Error(`Invalid tokenIdentifier format: ${tokenIdentifier}`);
+	}
+	return tokenIdentifier.substring(firstPipe + 1);
+}

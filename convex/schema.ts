@@ -43,6 +43,14 @@ export default defineSchema({
 		.index("by_user", ["userId"])
 		.index("by_org_and_user", ["organizationId", "userId"]),
 
+	// --- Auth0 Role Mappings (Convex role name → Auth0 role ID cache) ---
+
+	auth0RoleMappings: defineTable({
+		roleName: v.string(),
+		auth0RoleId: v.string(),
+		createdAt: v.number(),
+	}).index("by_roleName", ["roleName"]),
+
 	// --- Invitations ---
 
 	invitations: defineTable({

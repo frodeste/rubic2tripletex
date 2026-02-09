@@ -9,6 +9,7 @@
  */
 
 import type * as apiCredentials from "../apiCredentials.js";
+import type * as auth0RoleMappings from "../auth0RoleMappings.js";
 import type * as crons from "../crons.js";
 import type * as customerMapping from "../customerMapping.js";
 import type * as departmentMapping from "../departmentMapping.js";
@@ -39,6 +40,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   apiCredentials: typeof apiCredentials;
+  auth0RoleMappings: typeof auth0RoleMappings;
   crons: typeof crons;
   customerMapping: typeof customerMapping;
   departmentMapping: typeof departmentMapping;

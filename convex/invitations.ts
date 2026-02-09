@@ -3,24 +3,13 @@ import { v } from "convex/values";
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
 
 import { internal } from "./_generated/api";
-import { action } from "./_generated/server";
+import { internalAction } from "./_generated/server";
+import { ensureAuth0RoleIds } from "./auth0RoleMappings";
 import { authenticatedMutation, authenticatedQuery } from "./functions";
-import { requireOrgAdmin, requireOrgMembership } from "./lib/auth";
+import { extractAuth0UserId, requireOrgAdmin, requireOrgMembership } from "./lib/auth";
 import { addAuth0OrgMember, assignAuth0OrgRoles } from "./lib/auth0Management";
 import type { MemberRole } from "./validators";
 import { memberRole } from "./validators";
-
-/**
- * Extract the Auth0 user ID (subject) from a Convex tokenIdentifier.
- * Format: "https://domain/|auth0|user123" → "auth0|user123"
- */
-function extractAuth0UserId(tokenIdentifier: string): string {
-	const firstPipe = tokenIdentifier.indexOf("|");
-	if (firstPipe === -1) {
-		throw new Error(`Invalid tokenIdentifier format: ${tokenIdentifier}`);
-	}
-	return tokenIdentifier.substring(firstPipe + 1);
-}
 
 /**
  * Create a new invitation for an organization.
@@ -218,7 +207,7 @@ export const revoke = authenticatedMutation({
  * This runs as a scheduled action after the invitation is accepted,
  * so the mutation completes immediately and Auth0 sync is best-effort.
  */
-export const syncAcceptedMemberToAuth0 = action({
+export const syncAcceptedMemberToAuth0 = internalAction({
 	args: {
 		organizationId: v.id("organizations"),
 		userId: v.id("users"),
@@ -241,7 +230,8 @@ export const syncAcceptedMemberToAuth0 = action({
 
 		try {
 			await addAuth0OrgMember(org.auth0OrgId, auth0UserId);
-			await assignAuth0OrgRoles(org.auth0OrgId, auth0UserId, [args.role as MemberRole]);
+			const roleIds = await ensureAuth0RoleIds(ctx, [args.role as MemberRole]);
+			await assignAuth0OrgRoles(org.auth0OrgId, auth0UserId, roleIds);
 		} catch (error) {
 			console.error("Failed to sync accepted invitation to Auth0:", error);
 		}
