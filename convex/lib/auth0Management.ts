@@ -31,6 +31,9 @@
  *   - read:organization_member_roles
  *   - create:organization_member_roles
  *   - delete:organization_member_roles
+ *   - create:organization_invitations
+ *   - read:organization_invitations
+ *   - delete:organization_invitations
  *
  * @see https://auth0.com/docs/api/management/v2
  */
@@ -443,4 +446,127 @@ export async function getAuth0OrgMemberRoles(
 	}
 
 	return (await response.json()) as Auth0Role[];
+}
+
+// ---------------------------------------------------------------------------
+// Organization Invitations (Auth0-managed)
+// ---------------------------------------------------------------------------
+
+interface CreateAuth0InvitationOptions {
+	/** Email address of the invitee. */
+	inviteeEmail: string;
+	/** Display name of the inviter (shown in the invitation email). */
+	inviterName: string;
+	/** The Auth0 Application client ID the invitee should authenticate with. */
+	clientId: string;
+	/** The Auth0 Connection ID the invitee should authenticate through (optional). */
+	connectionId?: string;
+	/** Time-to-live in seconds. Defaults to 604800 (7 days) if omitted. Max 2592000 (30 days). */
+	ttlSec?: number;
+	/** Pre-resolved Auth0 role IDs to assign on acceptance (optional, max 50). */
+	roleIds?: string[];
+	/** Whether Auth0 should send the invitation email. Defaults to true. */
+	sendInvitationEmail?: boolean;
+}
+
+interface Auth0InvitationResponse {
+	id: string;
+	invitation_url: string;
+	created_at: string;
+	expires_at: string;
+}
+
+/**
+ * Create an Organization Invitation via the Auth0 Management API.
+ *
+ * Auth0 generates the invite link and (optionally) sends the invitation email.
+ * Returns the Auth0 invitation ID and URL.
+ *
+ * Requires M2M scope `create:organization_invitations`.
+ *
+ * @param auth0OrgId - The Auth0 Organization ID (e.g. "org_abc123")
+ * @param options    - Invitation details (invitee email, inviter name, client ID, etc.)
+ * @returns The Auth0 invitation response containing the invitation ID and URL.
+ *
+ * @see https://auth0.com/docs/manage-users/organizations/configure-organizations/send-membership-invitations
+ */
+export async function createAuth0OrganizationInvitation(
+	auth0OrgId: string,
+	options: CreateAuth0InvitationOptions,
+): Promise<Auth0InvitationResponse> {
+	const config = requireAuth0Config();
+	const token = await getManagementToken(config);
+
+	const body: Record<string, unknown> = {
+		inviter: { name: options.inviterName },
+		invitee: { email: options.inviteeEmail },
+		client_id: options.clientId,
+		send_invitation_email: options.sendInvitationEmail ?? true,
+	};
+
+	if (options.connectionId) {
+		body.connection_id = options.connectionId;
+	}
+	if (options.ttlSec !== undefined) {
+		body.ttl_sec = options.ttlSec;
+	}
+	if (options.roleIds && options.roleIds.length > 0) {
+		body.roles = options.roleIds;
+	}
+
+	const response = await fetch(
+		`${config.domain}/api/v2/organizations/${encodeURIComponent(auth0OrgId)}/invitations`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(body),
+		},
+	);
+
+	if (!response.ok) {
+		const responseBody = await response.text();
+		throw new Error(
+			`Auth0 create organization invitation failed (${response.status}): ${responseBody}`,
+		);
+	}
+
+	return (await response.json()) as Auth0InvitationResponse;
+}
+
+/**
+ * Delete (revoke) an Organization Invitation via the Auth0 Management API.
+ *
+ * Once deleted, the invitation link stops working.
+ *
+ * Requires M2M scope `delete:organization_invitations`.
+ *
+ * @param auth0OrgId        - The Auth0 Organization ID
+ * @param auth0InvitationId - The Auth0 Invitation ID to delete
+ */
+export async function deleteAuth0OrganizationInvitation(
+	auth0OrgId: string,
+	auth0InvitationId: string,
+): Promise<void> {
+	const config = requireAuth0Config();
+	const token = await getManagementToken(config);
+
+	const response = await fetch(
+		`${config.domain}/api/v2/organizations/${encodeURIComponent(auth0OrgId)}/invitations/${encodeURIComponent(auth0InvitationId)}`,
+		{
+			method: "DELETE",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		},
+	);
+
+	if (!response.ok) {
+		const responseBody = await response.text();
+		throw new Error(
+			`Auth0 delete organization invitation failed (${response.status}): ${responseBody}`,
+		);
+	}
 }

@@ -229,6 +229,11 @@ exports.onExecutePostLogin = async (event, api) => {
     email: event.user.email,
     name: event.user.name || event.user.nickname || undefined,
     avatarUrl: event.user.picture || undefined,
+    // Forward organization context to Convex so it can sync membership
+    // when the user accepted an Auth0 Organization Invitation.
+    organization: event.organization
+      ? { id: event.organization.id, name: event.organization.display_name }
+      : undefined,
   };
 
   try {
