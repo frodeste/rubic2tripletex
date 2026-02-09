@@ -174,6 +174,9 @@ export const fetchDepartmentsFromRubicPublic = action({
 	handler: fetchDepartmentsFromRubicHandler,
 });
 
+// @ts-ignore TS2589 — cumulative type instantiation depth from 7 action()
+// registrations in one file exceeds TypeScript's limit. Handler is pre-typed
+// with ActionCtx above, so runtime type safety is maintained.
 export const fetchDepartmentsFromTripletexPublic = action({
 	args: {
 		organizationId: v.id("organizations"),
