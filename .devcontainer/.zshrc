@@ -20,10 +20,11 @@ plugins=(
     colored-man-pages
     command-not-found
     # External plugins (installed by zsh-setup.sh or baked into image)
+    # zsh-syntax-highlighting must be last per its documentation
     zsh-autosuggestions
-    zsh-syntax-highlighting
     zsh-completions
     fzf-tab
+    zsh-syntax-highlighting
 )
 
 # ==============================================================================
