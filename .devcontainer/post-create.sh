@@ -23,7 +23,7 @@ git config --global diff.colorMoved zebra
 echo "Checking zsh plugins..."
 if ! bash "$SCRIPT_DIR/zsh-setup.sh"; then
     echo "[post-create] Warning: Failed to set up zsh plugins." >&2
-    echo "[post-create] Zsh plugins are optional — continuing with the rest of setup."
+    echo "[post-create] Zsh plugins are optional — continuing with the rest of setup." >&2
 fi
 
 # ==============================================================================
