@@ -120,25 +120,5 @@ export const testConnectionPublic = action({
 	},
 });
 
-// ---------------------------------------------------------------------------
-// Public fetch actions (require membership — viewers can read)
-// ---------------------------------------------------------------------------
-
-export const fetchDepartmentsFromRubicPublic = action({
-	args: { organizationId: v.id("organizations") },
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.fetchDepartmentsFromRubic, args);
-	},
-});
-
-export const fetchDepartmentsFromTripletexPublic = action({
-	args: {
-		organizationId: v.id("organizations"),
-		tripletexEnv: tripletexEnvValidator,
-	},
-	handler: async (ctx, args) => {
-		await requireAuthAndMembership(ctx, args.organizationId);
-		return ctx.runAction(internal.sync.fetchDepartmentsFromTripletex, args);
-	},
-});
+// Public fetch actions (department lookups) are in convex/syncPublicFetch.ts
+// to keep each file under the TypeScript type instantiation depth limit.
