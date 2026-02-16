@@ -80,6 +80,21 @@ mkdir -p "$HOME/.local/bin"
 curl -sSfL https://raw.githubusercontent.com/auth0/auth0-cli/main/install.sh | sh -s -- -b "$HOME/.local/bin"
 
 # ==============================================================================
+# Sentry CLI Setup
+# ==============================================================================
+echo "Installing Sentry CLI..."
+if command -v sentry-cli &> /dev/null; then
+    echo "  Sentry CLI already installed"
+else
+    if curl -sL https://sentry.io/get-cli/ | sh; then
+        echo "  Sentry CLI installed"
+    else
+        echo "[post-create] Warning: Failed to install Sentry CLI." >&2
+        echo "[post-create] Continuing setup. You can retry later with: curl -sL https://sentry.io/get-cli/ | sh" >&2
+    fi
+fi
+
+# ==============================================================================
 # MCP Servers Setup (for Cursor AI)
 # ==============================================================================
 MCP_TEMPLATE="$SCRIPT_DIR/mcp.json.template"
@@ -112,6 +127,7 @@ echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not instal
 echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
 echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"
 echo "  Auth0 CLI:    $(auth0 --version 2>/dev/null || echo 'not installed')"
+echo "  Sentry CLI:   $(sentry-cli --version 2>/dev/null || echo 'not installed')"
 
 # ==============================================================================
 # Completion Message
