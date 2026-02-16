@@ -154,21 +154,25 @@ function InviteMemberDialog({ organizationId }: { organizationId: Id<"organizati
 						<Label>Role</Label>
 						<Select value={role} onValueChange={(v) => v && setRole(v as InvitableRole)}>
 							<SelectTrigger>
-								<SelectValue />
+								<SelectValue placeholder="Select a role">
+									{INVITABLE_ROLES.find((r) => r.value === role)?.label ?? role}
+								</SelectValue>
 							</SelectTrigger>
-							<SelectPositioner>
+							<SelectPositioner portal={false}>
 								<SelectContent>
 									{INVITABLE_ROLES.map((r) => (
 										<SelectItem key={r.value} value={r.value}>
-											{r.label}
+											<div className="flex flex-col">
+												<span>{r.label}</span>
+												<span className="text-xs text-muted-foreground">
+													{r.description}
+												</span>
+											</div>
 										</SelectItem>
 									))}
 								</SelectContent>
 							</SelectPositioner>
 						</Select>
-						<p className="text-xs text-muted-foreground">
-							{INVITABLE_ROLES.find((r) => r.value === role)?.description}
-						</p>
 					</div>
 				</div>
 				<DialogFooter>
