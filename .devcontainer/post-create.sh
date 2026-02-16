@@ -109,6 +109,7 @@ echo "  gh CLI:       $(gh --version 2>/dev/null | head -1 || echo 'not installe
 echo "  1Password:    $(op --version 2>/dev/null || echo 'not installed')"
 echo "  fzf:          $(fzf --version 2>/dev/null || echo 'not installed')"
 echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  Terraform:    $(terraform version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
 echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"
 echo "  Auth0 CLI:    $(auth0 --version 2>/dev/null || echo 'not installed')"

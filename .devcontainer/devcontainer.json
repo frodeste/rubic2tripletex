@@ -27,6 +27,9 @@
 		// ---- System tools ----
 		"ghcr.io/flexwie/devcontainer-features/op:1": {},
 		"ghcr.io/rails/devcontainer/features/postgres-client:1": {},
+		"ghcr.io/devcontainers/features/terraform:1": {
+			"version": "latest"
+		},
 		"ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
 			"packages": "build-essential,pkg-config,libssl-dev,jq,httpie"
 		},
@@ -54,7 +57,8 @@
 				"bradlc.vscode-tailwindcss",
 				"yoavbls.pretty-ts-errors",
 				"eamodio.gitlens",
-				"redhat.vscode-yaml"
+				"redhat.vscode-yaml",
+				"hashicorp.terraform"
 			],
 			"settings": {
 				"editor.defaultFormatter": "biomejs.biome",
