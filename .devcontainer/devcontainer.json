@@ -35,7 +35,6 @@
 		"ghcr.io/devcontainers-extra/features/fzf:1": {},
 		"ghcr.io/devcontainers-extra/features/fd:1": {},
 		"ghcr.io/jsburckhardt/devcontainer-features/bat:1": {},
-		"ghcr.io/cirolosapio/devcontainers-features/alpine-sentry-cli:0": {},
 
 		// ---- Zsh plugins ----
 		"ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
