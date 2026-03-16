@@ -18,30 +18,51 @@ git config --global fetch.prune true
 git config --global diff.colorMoved zebra
 
 # ==============================================================================
-# Zsh Plugins (fallback if devcontainer feature didn't install them)
+# lsd (modern ls) — install from GitHub release if not in image
 # ==============================================================================
-echo "Checking zsh plugins..."
+if ! command -v lsd &> /dev/null; then
+    echo "Installing lsd..."
+    LSD_VER="1.0.0"
+    LSD_DEB="lsd_${LSD_VER}_amd64.deb"
+    if curl -sSL -o /tmp/"$LSD_DEB" "https://github.com/lsd-rs/lsd/releases/download/v${LSD_VER}/${LSD_DEB}" && sudo dpkg -i /tmp/"$LSD_DEB"; then
+        echo "  lsd installed"
+    fi
+    rm -f /tmp/"$LSD_DEB"
+fi
+
+# ==============================================================================
+# Zsh: plugins under ~/.local/share/zsh/plugins (no Oh My Zsh)
+# ==============================================================================
+echo "Setting up Zsh plugins..."
 if ! bash "$SCRIPT_DIR/zsh-setup.sh"; then
     echo "[post-create] Warning: Failed to set up zsh plugins." >&2
     echo "[post-create] Zsh plugins are optional — continuing with the rest of setup." >&2
 fi
 
 # ==============================================================================
-# Zsh Configuration
+# Starship prompt
 # ==============================================================================
-CUSTOM_ZSHRC="$SCRIPT_DIR/.zshrc"
-USER_ZSHRC="$HOME/.zshrc"
-
-if [ -f "$CUSTOM_ZSHRC" ]; then
-    if ! grep -q "Rubic2Tripletex Development Container" "$USER_ZSHRC" 2>/dev/null; then
-        echo "" >> "$USER_ZSHRC"
-        echo "# Load Rubic2Tripletex custom configuration" >> "$USER_ZSHRC"
-        echo "source \"$CUSTOM_ZSHRC\"" >> "$USER_ZSHRC"
-        echo "  Custom zsh configuration linked"
-    else
-        echo "  Custom zsh configuration already linked"
-    fi
+if ! command -v starship &> /dev/null; then
+    echo "Installing Starship..."
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
 fi
+
+# ==============================================================================
+# Zsh and shell config (layered: .zshrc + ~/.config/shell/* + ~/.local/share/zsh/*)
+# ==============================================================================
+echo "Deploying Zsh and Starship config..."
+mkdir -p "$HOME/.config/shell"
+mkdir -p "$HOME/.local/share/zsh"
+
+cp "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
+[ -f "$SCRIPT_DIR/env.zsh" ] && cp "$SCRIPT_DIR/env.zsh" "$HOME/.config/shell/env.zsh"
+[ -f "$SCRIPT_DIR/history-and-completion.zsh" ] && cp "$SCRIPT_DIR/history-and-completion.zsh" "$HOME/.config/shell/history-and-completion.zsh"
+[ -f "$SCRIPT_DIR/aliases-and-functions.zsh" ] && cp "$SCRIPT_DIR/aliases-and-functions.zsh" "$HOME/.config/shell/aliases-and-functions.zsh"
+[ -f "$SCRIPT_DIR/key-bindings.zsh" ] && cp "$SCRIPT_DIR/key-bindings.zsh" "$HOME/.local/share/zsh/key-bindings.zsh"
+mkdir -p "$HOME/.config"
+[ -f "$SCRIPT_DIR/starship.toml" ] && cp "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
+
+echo "  Zsh and Starship config deployed"
 
 # ==============================================================================
 # Dependencies Installation
@@ -123,6 +144,9 @@ echo "  Vercel:       $(vercel --version 2>/dev/null || echo 'not installed')"
 echo "  gh CLI:       $(gh --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  1Password:    $(op --version 2>/dev/null || echo 'not installed')"
 echo "  fzf:          $(fzf --version 2>/dev/null || echo 'not installed')"
+echo "  ripgrep:      $(rg --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  lsd:          $(lsd --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  starship:     $(starship --version 2>/dev/null || echo 'not installed')"
 echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
 echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"

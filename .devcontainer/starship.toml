@@ -1,0 +1,43 @@
+# Starship: dashboard only (git, node/bun, package, duration, prompt layout).
+# Real work (aliases, functions, PATH, history, completions, keybindings, env) lives in Zsh.
+# https://starship.rs/config/
+
+command_timeout = 1000
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$nodejs\
+$bun\
+$package\
+$cmd_duration\
+$fill\
+$line_break\
+$character"""
+
+# Right prompt (time on the right)
+right_format = "$time"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+
+[fill]
+symbol = "·"
+style = "dimmed"
+
+[cmd_duration]
+min_time = 500
+
+[time]
+format = '[$time]($style) '
+time_format = "%H:%M"
+style = "dimmed"
+
+# Git: ahead/behind counts for more repo signal
+[git_status]
+ahead = '⇡${count}'
+behind = '⇣${count}'
+diverged = '⇕⇡${ahead_count}⇣${behind_count}'
