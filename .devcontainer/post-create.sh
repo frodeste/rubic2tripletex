@@ -142,6 +142,7 @@ echo "  ripgrep:      $(rg --version 2>/dev/null | head -1 || echo 'not installe
 echo "  lsd:          $(lsd --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  starship:     $(starship --version 2>/dev/null || echo 'not installed')"
 echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  Terraform:    $(terraform version 2>/dev/null | grep '^Terraform v' || echo 'not installed')"
 echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
 echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"
 echo "  Auth0 CLI:    $(auth0 --version 2>/dev/null || echo 'not installed')"

@@ -66,16 +66,27 @@ function SelectTrigger({
 	);
 }
 
-function SelectPositioner({ className, ...props }: SelectPrimitive.Positioner.Props) {
-	return (
-		<SelectPrimitive.Portal>
-			<SelectPrimitive.Positioner
-				data-slot="select-positioner"
-				className={cn("outline-none", className)}
-				{...props}
-			/>
-		</SelectPrimitive.Portal>
+function SelectPositioner({
+	className,
+	portal = true,
+	...props
+}: SelectPrimitive.Positioner.Props & {
+	/** Set to false when inside a modal Dialog to avoid portal-vs-inert conflicts. */
+	portal?: boolean;
+}) {
+	const positioner = (
+		<SelectPrimitive.Positioner
+			data-slot="select-positioner"
+			className={cn("outline-none", className)}
+			{...props}
+		/>
 	);
+
+	if (!portal) {
+		return positioner;
+	}
+
+	return <SelectPrimitive.Portal>{positioner}</SelectPrimitive.Portal>;
 }
 
 function SelectContent({ className, children, ...props }: SelectPrimitive.Popup.Props) {

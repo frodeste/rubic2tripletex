@@ -24,7 +24,7 @@ graph LR
 | **Organizations** | Convex | Name, slug, settings, creation, deletion; Auth0 Organization auto-created via M2M |
 | **Role assignments** | Convex | Convex `memberships.role` is the source of truth; synced to Auth0 Organization Roles via M2M (best-effort) |
 | **Memberships** | Convex | Convex `memberships` table is the source of truth; synced to Auth0 Organization membership via M2M (best-effort) |
-| **Invitations** | Convex | Invite lifecycle: create, accept, revoke, expire (synced to Auth0 on acceptance) |
+| **Invitations** | Convex + Auth0 | Convex is source of truth for which invitations are sent (email, role, org). Auth0 sends the invitation email and generates the invite link. Auth0 is the authority for acceptance (user clicks link, signs in, is added to org). Convex syncs acceptance from Auth0 on login via Post-Login Action. Revoking in Convex also revokes in Auth0. |
 | **User app data** | Convex | Preferences, `lastActiveAt`, feature flags, audit trails |
 | **Business data** | Convex | API credentials, sync state, mappings, schedules |
 
@@ -133,7 +133,7 @@ Key tables (see `convex/schema.ts` for full definitions):
 | `organizations` | Tenant entities with name, slug, optional `auth0OrgId` |
 | `memberships` | User-org relationships with `owner`/`admin`/`member`/`billing`/`viewer` roles (source of truth, synced to Auth0) |
 | `auth0RoleMappings` | Persistent cache of Convex role name → Auth0 role ID mappings (auto-created on demand) |
-| `invitations` | Invitation lifecycle (pending → accepted/expired/revoked) |
+| `invitations` | Invitation lifecycle (pending → accepted/expired/revoked). Linked to Auth0 via `auth0InvitationId`. |
 | `apiCredentials` | Per-org, per-provider, per-environment API keys |
 | `integrationSchedules` | Cron-based sync schedules per org |
 | `syncState` | Run history (status, record counts, errors) |
@@ -152,7 +152,8 @@ convex/                              # Convex backend
   users.ts                           # User CRUD + JIT provisioning
   organizations.ts                   # Org CRUD + membership management + Auth0 org/role sync
   auth0RoleMappings.ts               # Auth0 role ID cache + auto-create resolver
-  invitations.ts                     # Invitation lifecycle
+  invitations.ts                     # Invitation lifecycle + Auth0 send/revoke/sync
+  http.ts                            # HTTP Actions (Auth0 Post-Login callback)
   apiCredentials.ts                  # Per-org API credential management
   integrationSchedules.ts            # Cron schedule management
   sync.ts                            # Sync orchestration
@@ -166,7 +167,7 @@ convex/                              # Convex backend
   validators.ts                      # Shared Convex validators
   lib/
     auth.ts                          # Auth helpers (requireOrgMembership, requireOrgOperator, etc.)
-    auth0Management.ts               # Auth0 Management API (M2M) — profile sync + RBAC role management
+    auth0Management.ts               # Auth0 Management API (M2M) — profile sync, RBAC, org invitations
     mappers.ts                       # Server-side entity mappers
     rubicClient.ts                   # Rubic API client (server-side)
     tripletexClient.ts               # Tripletex API client (server-side)

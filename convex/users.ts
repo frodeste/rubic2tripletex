@@ -5,6 +5,49 @@ import { authenticatedMutation, authenticatedQuery } from "./functions";
 import { updateAuth0User } from "./lib/auth0Management";
 
 /**
+ * Internal mutation called by the Auth0 Post-Login HTTP Action.
+ * Upserts a user record by tokenIdentifier. Not exposed to the client.
+ */
+export const upsertFromAuth0 = internalMutation({
+	args: {
+		tokenIdentifier: v.string(),
+		email: v.string(),
+		name: v.optional(v.string()),
+		avatarUrl: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const existingUser = await ctx.db
+			.query("users")
+			.withIndex("by_token", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
+			.unique();
+
+		const now = Date.now();
+
+		if (existingUser) {
+			// Only update lastActiveAt, name, and avatarUrl on subsequent logins
+			await ctx.db.patch(existingUser._id, {
+				lastActiveAt: now,
+				...(args.name !== undefined ? { name: args.name } : {}),
+				...(args.avatarUrl !== undefined ? { avatarUrl: args.avatarUrl } : {}),
+			});
+			return existingUser._id;
+		}
+
+		// Create new user
+		const userId = await ctx.db.insert("users", {
+			tokenIdentifier: args.tokenIdentifier,
+			email: args.email,
+			name: args.name,
+			avatarUrl: args.avatarUrl,
+			lastActiveAt: now,
+			createdAt: now,
+		});
+
+		return userId;
+	},
+});
+
+/**
  * Store or update the current user's record in Convex.
  * This is a raw mutation (not authenticatedMutation) because it creates
  * the user record that authenticatedMutation depends on.

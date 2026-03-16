@@ -61,6 +61,8 @@ export default defineSchema({
 		token: v.string(),
 		expiresAt: v.number(),
 		acceptedAt: v.optional(v.number()),
+		/** Auth0 Organization Invitation ID, set after the invitation is sent via Auth0. */
+		auth0InvitationId: v.optional(v.string()),
 		status: v.union(
 			v.literal("pending"),
 			v.literal("accepted"),
