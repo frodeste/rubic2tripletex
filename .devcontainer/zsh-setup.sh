@@ -11,18 +11,27 @@ OMZ_PLUGINS="gh sudo extract"
 echo "Setting up Zsh plugins in $PLUGINS_DIR..."
 mkdir -p "$PLUGINS_DIR"
 
-# Clone once and copy OMZ plugins (gh, sudo, extract)
+# Clone once and copy OMZ plugins (gh, sudo, extract) only if any are missing
 if [[ -n "$OMZ_PLUGINS" ]]; then
-  OMZ_TMP="$PLUGINS_DIR/.omz_tmp"
-  if [ ! -d "$OMZ_TMP/plugins/gh" ]; then
+  needs_fetch=false
+  for p in $OMZ_PLUGINS; do
+    if [ ! -d "$PLUGINS_DIR/$p" ]; then
+      needs_fetch=true
+      break
+    fi
+  done
+
+  if [ "$needs_fetch" = true ]; then
+    OMZ_TMP=$(mktemp -d)
     echo "  Fetching Oh My Zsh (plugins only)..."
-    git clone --depth 1 "$OMZ_URL" "$OMZ_TMP"
-    for p in $OMZ_PLUGINS; do
-      if [ -d "$OMZ_TMP/plugins/$p" ]; then
-        cp -R "$OMZ_TMP/plugins/$p" "$PLUGINS_DIR/"
-        echo "  Installed $p"
-      fi
-    done
+    if git clone --depth 1 "$OMZ_URL" "$OMZ_TMP"; then
+      for p in $OMZ_PLUGINS; do
+        if [ -d "$OMZ_TMP/plugins/$p" ] && [ ! -d "$PLUGINS_DIR/$p" ]; then
+          cp -R "$OMZ_TMP/plugins/$p" "$PLUGINS_DIR/"
+          echo "  Installed $p"
+        fi
+      done
+    fi
     rm -rf "$OMZ_TMP"
   fi
 fi

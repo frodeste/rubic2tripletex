@@ -43,8 +43,11 @@ for _p in $plugins; do
   case $_p in
     fzf)
       for _fzf_base in /usr/share/fzf "$HOME/.fzf/shell" "/opt/homebrew/opt/fzf/shell" "/usr/local/opt/fzf/shell"; do
-        [ -r "$_fzf_base/key-bindings.zsh" ] && source "$_fzf_base/key-bindings.zsh"
-        [ -r "$_fzf_base/completion.zsh" ] && source "$_fzf_base/completion.zsh"
+        if [ -d "$_fzf_base" ]; then
+          [ -r "$_fzf_base/key-bindings.zsh" ] && source "$_fzf_base/key-bindings.zsh"
+          [ -r "$_fzf_base/completion.zsh" ] && source "$_fzf_base/completion.zsh"
+          break
+        fi
       done
       ;;
     fzf-tab)
