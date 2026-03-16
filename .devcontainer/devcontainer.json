@@ -28,8 +28,11 @@
 		"ghcr.io/flexwie/devcontainer-features/op:1": {},
 		"ghcr.io/rails/devcontainer/features/postgres-client:1": {},
 		"ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
-			"packages": "build-essential,pkg-config,libssl-dev,jq,httpie,ripgrep"
+			"packages": "build-essential,pkg-config,libssl-dev,jq,httpie,ripgrep,lsd"
 		},
+
+		// ---- Shell prompt (GitHub Releases) ----
+		"ghcr.io/devcontainers-extra/features/starship:1": {},
 
 		// ---- CLI utilities ----
 		"ghcr.io/devcontainers-extra/features/fzf:1": {},

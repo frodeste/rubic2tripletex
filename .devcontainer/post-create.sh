@@ -18,34 +18,28 @@ git config --global fetch.prune true
 git config --global diff.colorMoved zebra
 
 # ==============================================================================
-# lsd (modern ls) — install from GitHub release if not in image
-# ==============================================================================
-if ! command -v lsd &> /dev/null; then
-    echo "Installing lsd..."
-    LSD_VER="1.0.0"
-    LSD_DEB="lsd_${LSD_VER}_amd64.deb"
-    if curl -sSL -o /tmp/"$LSD_DEB" "https://github.com/lsd-rs/lsd/releases/download/v${LSD_VER}/${LSD_DEB}" && sudo dpkg -i /tmp/"$LSD_DEB"; then
-        echo "  lsd installed"
-    fi
-    rm -f /tmp/"$LSD_DEB"
-fi
-
-# ==============================================================================
-# Zsh: plugins under ~/.local/share/zsh/plugins (no Oh My Zsh)
+# Zsh: plugins under ~/.local/share/zsh/plugins (required)
 # ==============================================================================
 echo "Setting up Zsh plugins..."
-if ! bash "$SCRIPT_DIR/zsh-setup.sh"; then
-    echo "[post-create] Warning: Failed to set up zsh plugins." >&2
-    echo "[post-create] Zsh plugins are optional — continuing with the rest of setup." >&2
-fi
+bash "$SCRIPT_DIR/zsh-setup.sh"
+
+PLUGINS_DIR="${HOME}/.local/share/zsh/plugins"
+for _p in zsh-autosuggestions fzf-tab zsh-syntax-highlighting; do
+    if [ ! -d "$PLUGINS_DIR/$_p" ]; then
+        echo "[post-create] ERROR: Required Zsh plugin missing: $PLUGINS_DIR/$_p" >&2
+        exit 1
+    fi
+done
+echo "  Zsh plugins OK"
 
 # ==============================================================================
-# Starship prompt
+# Starship prompt (required; installed via devcontainer feature)
 # ==============================================================================
 if ! command -v starship &> /dev/null; then
-    echo "Installing Starship..."
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    echo "[post-create] ERROR: Starship is not installed or not in PATH (expected from devcontainer feature)." >&2
+    exit 1
 fi
+echo "  Starship OK"
 
 # ==============================================================================
 # Zsh and shell config (layered: .zshrc + ~/.config/shell/* + ~/.local/share/zsh/*)
