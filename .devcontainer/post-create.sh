@@ -18,30 +18,45 @@ git config --global fetch.prune true
 git config --global diff.colorMoved zebra
 
 # ==============================================================================
-# Zsh Plugins (fallback if devcontainer feature didn't install them)
+# Zsh: plugins under ~/.local/share/zsh/plugins (required)
 # ==============================================================================
-echo "Checking zsh plugins..."
-if ! bash "$SCRIPT_DIR/zsh-setup.sh"; then
-    echo "[post-create] Warning: Failed to set up zsh plugins." >&2
-    echo "[post-create] Zsh plugins are optional — continuing with the rest of setup." >&2
-fi
+echo "Setting up Zsh plugins..."
+bash "$SCRIPT_DIR/zsh-setup.sh"
 
-# ==============================================================================
-# Zsh Configuration
-# ==============================================================================
-CUSTOM_ZSHRC="$SCRIPT_DIR/.zshrc"
-USER_ZSHRC="$HOME/.zshrc"
-
-if [ -f "$CUSTOM_ZSHRC" ]; then
-    if ! grep -q "Rubic2Tripletex Development Container" "$USER_ZSHRC" 2>/dev/null; then
-        echo "" >> "$USER_ZSHRC"
-        echo "# Load Rubic2Tripletex custom configuration" >> "$USER_ZSHRC"
-        echo "source \"$CUSTOM_ZSHRC\"" >> "$USER_ZSHRC"
-        echo "  Custom zsh configuration linked"
-    else
-        echo "  Custom zsh configuration already linked"
+PLUGINS_DIR="${HOME}/.local/share/zsh/plugins"
+for _p in zsh-autosuggestions fzf-tab zsh-syntax-highlighting; do
+    if [ ! -d "$PLUGINS_DIR/$_p" ]; then
+        echo "[post-create] ERROR: Required Zsh plugin missing: $PLUGINS_DIR/$_p" >&2
+        exit 1
     fi
+done
+echo "  Zsh plugins OK"
+
+# ==============================================================================
+# Starship prompt (required; installed via devcontainer feature)
+# ==============================================================================
+if ! command -v starship &> /dev/null; then
+    echo "[post-create] ERROR: Starship is not installed or not in PATH (expected from devcontainer feature)." >&2
+    exit 1
 fi
+echo "  Starship OK"
+
+# ==============================================================================
+# Zsh and shell config (layered: .zshrc + ~/.config/shell/* + ~/.local/share/zsh/*)
+# ==============================================================================
+echo "Deploying Zsh and Starship config..."
+mkdir -p "$HOME/.config/shell"
+mkdir -p "$HOME/.local/share/zsh"
+
+cp "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
+[ -f "$SCRIPT_DIR/env.zsh" ] && cp "$SCRIPT_DIR/env.zsh" "$HOME/.config/shell/env.zsh"
+[ -f "$SCRIPT_DIR/history-and-completion.zsh" ] && cp "$SCRIPT_DIR/history-and-completion.zsh" "$HOME/.config/shell/history-and-completion.zsh"
+[ -f "$SCRIPT_DIR/aliases-and-functions.zsh" ] && cp "$SCRIPT_DIR/aliases-and-functions.zsh" "$HOME/.config/shell/aliases-and-functions.zsh"
+[ -f "$SCRIPT_DIR/key-bindings.zsh" ] && cp "$SCRIPT_DIR/key-bindings.zsh" "$HOME/.local/share/zsh/key-bindings.zsh"
+mkdir -p "$HOME/.config"
+[ -f "$SCRIPT_DIR/starship.toml" ] && cp "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
+
+echo "  Zsh and Starship config deployed"
 
 # ==============================================================================
 # Dependencies Installation
@@ -123,6 +138,9 @@ echo "  Vercel:       $(vercel --version 2>/dev/null || echo 'not installed')"
 echo "  gh CLI:       $(gh --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  1Password:    $(op --version 2>/dev/null || echo 'not installed')"
 echo "  fzf:          $(fzf --version 2>/dev/null || echo 'not installed')"
+echo "  ripgrep:      $(rg --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  lsd:          $(lsd --version 2>/dev/null | head -1 || echo 'not installed')"
+echo "  starship:     $(starship --version 2>/dev/null || echo 'not installed')"
 echo "  psql:         $(psql --version 2>/dev/null | head -1 || echo 'not installed')"
 echo "  Claude Code:  $(claude --version 2>/dev/null || echo 'not installed')"
 echo "  Codex:        $(codex --version 2>/dev/null || echo 'not installed')"

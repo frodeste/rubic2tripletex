@@ -5,10 +5,10 @@
 	"image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
 	"workspaceFolder": "/workspaces/rubic2tripletex",
 	"features": {
-		// ---- Shell and utilities ----
+		// ---- Shell and utilities (Zsh only; no Oh My Zsh; plugins in ~/.local/share/zsh/plugins) ----
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			"installZsh": true,
-			"installOhMyZsh": true,
+			"installOhMyZsh": false,
 			"configureZshAsDefaultShell": true,
 			"upgradePackages": true
 		},
@@ -28,19 +28,16 @@
 		"ghcr.io/flexwie/devcontainer-features/op:1": {},
 		"ghcr.io/rails/devcontainer/features/postgres-client:1": {},
 		"ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
-			"packages": "build-essential,pkg-config,libssl-dev,jq,httpie"
+			"packages": "build-essential,pkg-config,libssl-dev,jq,httpie,ripgrep,lsd"
 		},
+
+		// ---- Shell prompt (GitHub Releases) ----
+		"ghcr.io/devcontainers-extra/features/starship:1": {},
 
 		// ---- CLI utilities ----
 		"ghcr.io/devcontainers-extra/features/fzf:1": {},
 		"ghcr.io/devcontainers-extra/features/fd:1": {},
 		"ghcr.io/jsburckhardt/devcontainer-features/bat:1": {},
-
-		// ---- Zsh plugins ----
-		"ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
-			"plugins": "zsh-autosuggestions zsh-completions fzf-tab zsh-syntax-highlighting",
-			"omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions https://github.com/zsh-users/zsh-completions https://github.com/Aloxaf/fzf-tab https://github.com/zsh-users/zsh-syntax-highlighting"
-		},
 
 		// ---- Global npm tools (TypeScript comes with base image) ----
 		"ghcr.io/devcontainers-extra/features/npm-packages:1": {
