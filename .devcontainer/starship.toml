@@ -21,7 +21,7 @@ $character"""
 right_format = "$time"
 
 [directory]
-truncation_length = 3
+truncation_length = 2
 truncate_to_repo = true
 
 [fill]

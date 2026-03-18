@@ -55,6 +55,10 @@ cp "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
 [ -f "$SCRIPT_DIR/key-bindings.zsh" ] && cp "$SCRIPT_DIR/key-bindings.zsh" "$HOME/.local/share/zsh/key-bindings.zsh"
 mkdir -p "$HOME/.config"
 [ -f "$SCRIPT_DIR/starship.toml" ] && cp "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
+if [ -d "$SCRIPT_DIR/zsh-complete" ]; then
+  mkdir -p "$HOME/.zsh-complete"
+  cp -r "$SCRIPT_DIR/zsh-complete/"* "$HOME/.zsh-complete/"
+fi
 
 echo "  Zsh and Starship config deployed"
 

@@ -1,0 +1,16 @@
+#compdef cd
+# When completing ".." or ".", offer "../" or "./" so a trailing slash is inserted.
+
+_cd() {
+  if [[ "$PREFIX" == ".." ]]; then
+    compadd -Q -- "../"
+    return
+  fi
+  if [[ "$PREFIX" == "." ]]; then
+    compadd -Q -- "./"
+    return
+  fi
+  _path_files -/
+}
+
+_cd "$@"
