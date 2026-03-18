@@ -13,8 +13,6 @@ $nodejs\
 $bun\
 $package\
 $cmd_duration\
-$fill\
-$line_break\
 $character"""
 
 # Right prompt (time on the right)
@@ -23,10 +21,6 @@ right_format = "$time"
 [directory]
 truncation_length = 2
 truncate_to_repo = true
-
-[fill]
-symbol = "·"
-style = "dimmed"
 
 [cmd_duration]
 min_time = 500
